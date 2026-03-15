@@ -125,7 +125,8 @@
         const JIRA_BASE_URL = "https://jira.trixlog.com/browse/";
         
         let currentTab = 'tiago';
-        let store = JSON.parse(localStorage.getItem(DB_NAME)) || { tiago: [], alana: [], william: [], concluidos: [], etiquetas: [] };
+        let store = JSON.parse(localStorage.getItem(DB_NAME)) ||
+        { tiago: [], alana: [], william: [], concluidos: [], etiquetas: [] };
         
         let submissionQueue = [];
         let currentProcessingId = null;
@@ -141,6 +142,7 @@
             
             const isCSV = file.name.toLowerCase().endsWith('.csv');
             const reader = new FileReader();
+            
             reader.onload = (e) => {
                 try {
                     let workbook;
@@ -155,6 +157,7 @@
                     alert("Erro ao ler arquivo. Verifique se o formato é válido.");
                 }
             };
+            
             if (isCSV) {
                 reader.readAsText(file, 'UTF-8');
             } else {
@@ -177,6 +180,7 @@
             if (rows.length < 1) return;
             const rawHeaders = rows[0].map(h => (h || "").toString().trim());
             const dataRows = rows.slice(1);
+            
             const processed = dataRows.map(rowArray => {
                 let item = {};
                 rawHeaders.forEach((h, idx) => {
@@ -192,7 +196,6 @@
                 const linkSearch = JSON.stringify(item);
                 
                 const match = linkSearch.match(/(CONFIGURAR|PROCONFIG)-\d+/i);
-                
                 if (match) link = JIRA_BASE_URL + match[0].toUpperCase();
 
                 return { ...item, _id: 'ID-'+Math.random().toString(36).substr(2,9), _origin: currentTab, _link: link, _titleField: titleField };
@@ -226,7 +229,6 @@
                     }
                 });
                 
-                // --- MUDANÇA DO BOTÃO DO JIRA AQUI ---
                 card.innerHTML = `
                     <div class="px-4 py-3 bg-slate-50 border-b flex justify-between items-center">
                         <div class="flex items-center gap-2">
@@ -246,14 +248,15 @@
                 container.appendChild(card);
             });
             lucide.createIcons();
+            
+            // Re-aplica o filtro toda vez que a tela for atualizada
+            filterCards(); 
         }
 
-        // --- NOVA FUNÇÃO PARA ENVIAR DADOS PARA O TAMPERMONKEY ---
         function abrirJiraComDados(id) {
             const item = store[currentTab].find(x => x._id === id);
             if (!item || !item._link) return;
 
-            // Mapeamento dos campos do seu PCP para enviar na URL
             const dadosParaEnviar = {
                 serial: item["Serial Rastreador"] || "",
                 iccid: item["Iccid"] || "",
@@ -267,13 +270,11 @@
             const urlJira = new URL(item._link);
             urlJira.searchParams.append("autofill", "true");
             
-            // Adiciona apenas os campos que estiverem preenchidos no link
             Object.entries(dadosParaEnviar).forEach(([chave, valor]) => {
                 if (valor && valor.toString().trim() !== "") {
                     urlJira.searchParams.append(chave, valor);
                 }
             });
-
             window.open(urlJira.toString(), '_blank');
         }
 
@@ -307,6 +308,7 @@
             form.method = 'POST';
             form.action = WEB_APP_URL;
             form.target = 'hidden_iframe';
+            
             Object.entries(item).forEach(([k, v]) => {
                 if (!k.startsWith('_') || k === '_origin') {
                     const inp = document.createElement('input');
@@ -314,6 +316,7 @@
                     form.appendChild(inp);
                 }
             });
+            
             document.body.appendChild(form);
             form.submit();
             document.body.removeChild(form);
@@ -350,7 +353,6 @@
             XLSX.utils.book_append_sheet(wb, ws, "Etiquetas");
             
             XLSX.writeFile(wb, "Etiquetas_PCP.xlsx");
-            
             setTimeout(() => {
                 if(confirm("Planilha baixada! Deseja limpar os registros da aba de Etiquetas?")) {
                     store.etiquetas = [];
@@ -360,7 +362,10 @@
             }, 500);
         }
 
-        function updateVal(id,f,v) { const i = store[currentTab].find(x=>x._id===id); if(i){i[f]=v;save();}}
+        function updateVal(id,f,v) { 
+            const i = store[currentTab].find(x=>x._id===id);
+            if(i){i[f]=v;save();}
+        }
         
         function concluir(id) {
             const idx = store[currentTab].findIndex(x=>x._id===id);
@@ -369,7 +374,12 @@
             save(); render();
         }
         
-        function clearCurrentTab() { if(confirm("Limpar dados desta aba?")) { store[currentTab]=[]; save(); render(); } }
+        function clearCurrentTab() { 
+            if(confirm("Limpar dados desta aba?")) { 
+                store[currentTab]=[];
+                save(); render(); 
+            } 
+        }
         
         function switchTab(id) { 
             currentTab = id;
@@ -378,6 +388,10 @@
             document.getElementById('current-name').innerText = id.charAt(0).toUpperCase() + id.slice(1);
             document.getElementById('concluidos-tools').classList.toggle('hidden', id !== 'concluidos');
             document.getElementById('etiquetas-tools').classList.toggle('hidden', id !== 'etiquetas');
+            
+            // Limpa o campo de busca ao trocar de aba
+            document.getElementById('search-input').value = '';
+            
             render(); 
         }
         

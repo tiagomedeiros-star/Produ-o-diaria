@@ -402,7 +402,27 @@
         
         function filterCards() {
             const q = document.getElementById('search-input').value.toLowerCase();
-            document.querySelectorAll('.card-animation').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q) ? 'block' : 'none');
+            let visibleCount = 0;
+            
+            document.querySelectorAll('.card-animation').forEach(c => {
+                const isMatch = c.innerText.toLowerCase().includes(q);
+                c.style.display = isMatch ? 'block' : 'none';
+                
+                // Soma 1 para cada card que combinou com a pesquisa
+                if (isMatch) visibleCount++; 
+            });
+
+            // Se a barra de pesquisa tiver algum texto, atualiza os contadores
+            if (q.trim() !== '') {
+                if (['tiago', 'alana', 'william'].includes(currentTab)) {
+                    document.getElementById('stat-total').innerText = visibleCount;
+                } else if (currentTab === 'concluidos') {
+                    document.getElementById('stat-done').innerText = visibleCount;
+                }
+            } else {
+                // Se a busca for apagada, restaura a contagem total original
+                updateStats(); 
+            }
         }
 
         window.onload = () => { render(); updateStats(); };

@@ -243,7 +243,8 @@
         }
 
         function validateField(el, campo) {
-            if (campo !== 'Iccid' && campo !== 'Iccid Camera') return;
+            const validatableFields = ['Iccid', 'Iccid Camera', 'Serial TX009', 'Serial Leitor', 'Serial Teclado'];
+            if (!validatableFields.includes(campo)) return;
             
             el.classList.remove('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500', 
                                 'bg-red-50', 'border-red-500', 'text-red-600', 'focus:ring-red-500', 
@@ -256,14 +257,21 @@
             }
 
             const digitsOnly = val.replace(/\D/g, '');
-            if (digitsOnly.length < 20) {
+            let isValid = false;
+
+            if (campo === 'Iccid' || campo === 'Iccid Camera') {
+                isValid = digitsOnly.length === 20; // Exatamente 20
+            } else if (campo === 'Serial TX009' || campo === 'Serial Leitor' || campo === 'Serial Teclado') {
+                isValid = digitsOnly.length === 6; // Exatamente 6
+            }
+
+            if (!isValid) {
                 el.classList.add('bg-red-50', 'border-red-500', 'text-red-600', 'focus:ring-red-500');
             } else {
                 el.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-700', 'focus:ring-emerald-500');
             }
         }
 
-        // --- NOVA FUNÇÃO: EXCLUIR CARD INDIVIDUAL ---
         function deleteCard(id) {
             if (confirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.")) {
                 const idx = store[currentTab].findIndex(x => x._id === id);
@@ -274,7 +282,6 @@
                 }
             }
         }
-        // ---------------------------------------------
 
         function render() {
             const container = document.getElementById('container-' + currentTab);
@@ -294,12 +301,25 @@
                     let val = item[c] || '';
                     let colorClasses = "bg-slate-50 border-slate-200 focus:ring-blue-500"; 
                     
-                    if ((c === 'Iccid' || c === 'Iccid Camera') && val.length > 0) {
+                    if (val.length > 0) {
                         let digitsOnly = val.replace(/\D/g, '');
-                        if (digitsOnly.length < 20) {
-                            colorClasses = "bg-red-50 border-red-500 text-red-600 focus:ring-red-500";
-                        } else {
-                            colorClasses = "bg-emerald-50 border-emerald-500 text-emerald-700 focus:ring-emerald-500";
+                        let isValid = true;
+                        let needsValidation = false;
+
+                        if (c === 'Iccid' || c === 'Iccid Camera') {
+                            isValid = digitsOnly.length === 20; // Exatamente 20
+                            needsValidation = true;
+                        } else if (c === 'Serial TX009' || c === 'Serial Leitor' || c === 'Serial Teclado') {
+                            isValid = digitsOnly.length === 6; // Exatamente 6
+                            needsValidation = true;
+                        }
+
+                        if (needsValidation) {
+                            if (!isValid) {
+                                colorClasses = "bg-red-50 border-red-500 text-red-600 focus:ring-red-500";
+                            } else {
+                                colorClasses = "bg-emerald-50 border-emerald-500 text-emerald-700 focus:ring-emerald-500";
+                            }
                         }
                     }
 
@@ -318,7 +338,6 @@
                     }
                 });
                 
-                // MUDANÇAS AQUI: Adicionado o botão de Lixeira no grupo de botões da direita
                 card.innerHTML = `
                     <div class="px-4 py-3 bg-slate-50 border-b flex justify-between items-center">
                         <div class="flex items-center gap-2">

@@ -242,8 +242,9 @@
             save(); render();
         }
 
+        // --- ATUALIZADO: Regra para Smart Speaker adicionada ---
         function validateField(el, campo) {
-            const validatableFields = ['Iccid', 'Iccid Camera', 'Serial TX009', 'Serial Leitor', 'Serial Teclado'];
+            const validatableFields = ['Iccid', 'Iccid Camera', 'Serial TX009', 'Serial Leitor', 'Serial Teclado', 'Serial Smart Speaker'];
             if (!validatableFields.includes(campo)) return;
             
             el.classList.remove('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500', 
@@ -263,6 +264,8 @@
                 isValid = digitsOnly.length === 20; // Exatamente 20
             } else if (campo === 'Serial TX009' || campo === 'Serial Leitor' || campo === 'Serial Teclado') {
                 isValid = digitsOnly.length === 6; // Exatamente 6
+            } else if (campo === 'Serial Smart Speaker') {
+                isValid = digitsOnly.length === 4; // Exatamente 4
             }
 
             if (!isValid) {
@@ -301,16 +304,20 @@
                     let val = item[c] || '';
                     let colorClasses = "bg-slate-50 border-slate-200 focus:ring-blue-500"; 
                     
+                    // --- ATUALIZADO: Inicialização do Smart Speaker ---
                     if (val.length > 0) {
                         let digitsOnly = val.replace(/\D/g, '');
                         let isValid = true;
                         let needsValidation = false;
 
                         if (c === 'Iccid' || c === 'Iccid Camera') {
-                            isValid = digitsOnly.length === 20; // Exatamente 20
+                            isValid = digitsOnly.length === 20; 
                             needsValidation = true;
                         } else if (c === 'Serial TX009' || c === 'Serial Leitor' || c === 'Serial Teclado') {
-                            isValid = digitsOnly.length === 6; // Exatamente 6
+                            isValid = digitsOnly.length === 6; 
+                            needsValidation = true;
+                        } else if (c === 'Serial Smart Speaker') {
+                            isValid = digitsOnly.length === 4; 
                             needsValidation = true;
                         }
 

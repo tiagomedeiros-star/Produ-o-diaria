@@ -242,9 +242,9 @@
             save(); render();
         }
 
-        // --- ATUALIZADO: Regra para Smart Speaker adicionada ---
+        // --- ATUALIZADO: Regra para Serial Rastreador adicionada ---
         function validateField(el, campo) {
-            const validatableFields = ['Iccid', 'Iccid Camera', 'Serial TX009', 'Serial Leitor', 'Serial Teclado', 'Serial Smart Speaker'];
+            const validatableFields = ['Iccid', 'Iccid Camera', 'Serial TX009', 'Serial Leitor', 'Serial Teclado', 'Serial Smart Speaker', 'Serial Rastreador'];
             if (!validatableFields.includes(campo)) return;
             
             el.classList.remove('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500', 
@@ -261,11 +261,19 @@
             let isValid = false;
 
             if (campo === 'Iccid' || campo === 'Iccid Camera') {
-                isValid = digitsOnly.length === 20; // Exatamente 20
+                isValid = digitsOnly.length === 20;
             } else if (campo === 'Serial TX009' || campo === 'Serial Leitor' || campo === 'Serial Teclado') {
-                isValid = digitsOnly.length === 6; // Exatamente 6
+                isValid = digitsOnly.length === 6;
             } else if (campo === 'Serial Smart Speaker') {
-                isValid = digitsOnly.length === 4; // Exatamente 4
+                isValid = digitsOnly.length === 4;
+            } else if (campo === 'Serial Rastreador') {
+                if (digitsOnly.startsWith('4675') || digitsOnly.startsWith('4634')) {
+                    isValid = digitsOnly.length === 10;
+                } else if (digitsOnly.startsWith('86') || digitsOnly.startsWith('35')) {
+                    isValid = digitsOnly.length === 15;
+                } else {
+                    isValid = false; // Prefixo desconhecido
+                }
             }
 
             if (!isValid) {
@@ -304,7 +312,6 @@
                     let val = item[c] || '';
                     let colorClasses = "bg-slate-50 border-slate-200 focus:ring-blue-500"; 
                     
-                    // --- ATUALIZADO: Inicialização do Smart Speaker ---
                     if (val.length > 0) {
                         let digitsOnly = val.replace(/\D/g, '');
                         let isValid = true;
@@ -319,6 +326,15 @@
                         } else if (c === 'Serial Smart Speaker') {
                             isValid = digitsOnly.length === 4; 
                             needsValidation = true;
+                        } else if (c === 'Serial Rastreador') {
+                            needsValidation = true;
+                            if (digitsOnly.startsWith('4675') || digitsOnly.startsWith('4634')) {
+                                isValid = digitsOnly.length === 10;
+                            } else if (digitsOnly.startsWith('86') || digitsOnly.startsWith('35')) {
+                                isValid = digitsOnly.length === 15;
+                            } else {
+                                isValid = false;
+                            }
                         }
 
                         if (needsValidation) {

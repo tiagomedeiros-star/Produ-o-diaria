@@ -242,9 +242,8 @@
             save(); render();
         }
 
-        // --- ATUALIZADO: Regra para Serial Rastreador adicionada ---
         function validateField(el, campo) {
-            const validatableFields = ['Iccid', 'Iccid Camera', 'Serial TX009', 'Serial Leitor', 'Serial Teclado', 'Serial Smart Speaker', 'Serial Rastreador'];
+            const validatableFields = ['Iccid', 'Iccid Camera', 'Serial TX009', 'Serial Leitor', 'Serial Teclado', 'Serial Smart Speaker', 'Serial Rastreador', 'Serial Câmera'];
             if (!validatableFields.includes(campo)) return;
             
             el.classList.remove('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500', 
@@ -266,13 +265,15 @@
                 isValid = digitsOnly.length === 6;
             } else if (campo === 'Serial Smart Speaker') {
                 isValid = digitsOnly.length === 4;
+            } else if (campo === 'Serial Câmera') {
+                isValid = digitsOnly.length === 15; // Adicionada a regra de 15 números para Câmera
             } else if (campo === 'Serial Rastreador') {
                 if (digitsOnly.startsWith('4675') || digitsOnly.startsWith('4634')) {
                     isValid = digitsOnly.length === 10;
                 } else if (digitsOnly.startsWith('86') || digitsOnly.startsWith('35')) {
                     isValid = digitsOnly.length === 15;
                 } else {
-                    isValid = false; // Prefixo desconhecido
+                    isValid = false;
                 }
             }
 
@@ -292,6 +293,13 @@
                     render();
                 }
             }
+        }
+
+        function concluir(id) {
+            const idx = store[currentTab].findIndex(x=>x._id===id);
+            const i = store[currentTab].splice(idx, 1)[0];
+            store.concluidos.unshift(i);
+            save(); render();
         }
 
         function render() {
@@ -325,6 +333,9 @@
                             needsValidation = true;
                         } else if (c === 'Serial Smart Speaker') {
                             isValid = digitsOnly.length === 4; 
+                            needsValidation = true;
+                        } else if (c === 'Serial Câmera') {
+                            isValid = digitsOnly.length === 15; 
                             needsValidation = true;
                         } else if (c === 'Serial Rastreador') {
                             needsValidation = true;
@@ -498,13 +509,6 @@
         function updateVal(id,f,v) { 
             const i = store[currentTab].find(x=>x._id===id);
             if(i){i[f]=v;save();}
-        }
-        
-        function concluir(id) {
-            const idx = store[currentTab].findIndex(x=>x._id===id);
-            const i = store[currentTab].splice(idx, 1)[0];
-            store.concluidos.unshift(i);
-            save(); render();
         }
         
         function clearCurrentTab() { 

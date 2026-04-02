@@ -67,6 +67,7 @@
             <button onclick="switchTab('tiago')" id="btn-tiago" class="tab-button active flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> TIAGO</button>
             <button onclick="switchTab('alana')" id="btn-alana" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> ALANA</button>
             <button onclick="switchTab('william')" id="btn-william" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> WILLIAM</button>
+            <button onclick="switchTab('viviane')" id="btn-viviane" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> VIVIANE</button>
             <button onclick="switchTab('concluidos')" id="btn-concluidos" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all text-emerald-600"><i data-lucide="check-circle" class="w-4 h-4"></i> CONCLUÍDOS</button>
             <button onclick="switchTab('etiquetas')" id="btn-etiquetas" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all text-amber-600"><i data-lucide="tag" class="w-4 h-4"></i> ETIQUETAS</button>
         </div>
@@ -113,6 +114,7 @@
                 <div id="tiago" class="tab-content active"><div class="space-y-4" id="container-tiago"></div></div>
                 <div id="alana" class="tab-content"><div class="space-y-4" id="container-alana"></div></div>
                 <div id="william" class="tab-content"><div class="space-y-4" id="container-william"></div></div>
+                <div id="viviane" class="tab-content"><div class="space-y-4" id="container-viviane"></div></div>
                 <div id="concluidos" class="tab-content"><div class="space-y-4" id="container-concluidos"></div></div>
                 <div id="etiquetas" class="tab-content"><div class="space-y-4" id="container-etiquetas"></div></div>
 
@@ -131,7 +133,16 @@
         
         let currentTab = 'tiago';
         let store = JSON.parse(localStorage.getItem(DB_NAME)) ||
-        { tiago: [], alana: [], william: [], concluidos: [], etiquetas: [] };
+        { tiago: [], alana: [], william: [], viviane: [], concluidos: [], etiquetas: [] };
+        
+        // Proteção para caso tenha salvado o nome errado (vivine) anteriormente
+        if (store.vivine) {
+            store.viviane = store.vivine;
+            delete store.vivine;
+            localStorage.setItem(DB_NAME, JSON.stringify(store));
+        } else if (!store.viviane) {
+            store.viviane = [];
+        }
         
         let submissionQueue = [];
         let currentProcessingId = null;
@@ -266,7 +277,7 @@
             } else if (campo === 'Serial Smart Speaker') {
                 isValid = digitsOnly.length === 4;
             } else if (campo === 'Serial Câmera') {
-                isValid = digitsOnly.length === 15; // Adicionada a regra de 15 números para Câmera
+                isValid = digitsOnly.length === 15;
             } else if (campo === 'Serial Rastreador') {
                 if (digitsOnly.startsWith('4675') || digitsOnly.startsWith('4634')) {
                     isValid = digitsOnly.length === 10;
@@ -532,7 +543,7 @@
         }
         
         function updateStats() {
-            document.getElementById('stat-total').innerText = store.tiago.length + store.alana.length + store.william.length;
+            document.getElementById('stat-total').innerText = store.tiago.length + store.alana.length + store.william.length + store.viviane.length;
             document.getElementById('stat-done').innerText = store.concluidos.length;
         }
         
@@ -548,7 +559,7 @@
             });
 
             if (q.trim() !== '') {
-                if (['tiago', 'alana', 'william'].includes(currentTab)) {
+                if (['tiago', 'alana', 'william', 'viviane'].includes(currentTab)) {
                     document.getElementById('stat-total').innerText = visibleCount;
                 } else if (currentTab === 'concluidos') {
                     document.getElementById('stat-done').innerText = visibleCount;

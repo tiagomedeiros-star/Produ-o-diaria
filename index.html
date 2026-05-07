@@ -16,17 +16,22 @@
             background-repeat: no-repeat;
             min-height: 100vh;
         }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-content { display: none;
+        }
+        .tab-content.active { display: block;
+        }
         .tab-button.active { 
             background-color: white;
             border-bottom: 3px solid #2563eb; 
             color: #1e40af;
             font-weight: 800;
         }
-        .card-animation { animation: fadeInScale 0.3s ease-out forwards; }
-        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        .solid-panel { background-color: #ffffff; border: 1px solid #e2e8f0; }
+        .card-animation { animation: fadeInScale 0.3s ease-out forwards;
+        }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95);
+        } to { opacity: 1; transform: scale(1); } }
+        .solid-panel { background-color: #ffffff;
+            border: 1px solid #e2e8f0; }
         #loading-overlay {
             display: none;
             position: fixed;
@@ -47,26 +52,31 @@
         <p class="font-black text-blue-800 uppercase tracking-widest text-sm animate-pulse">Enviando para Planilha Google...</p>
     </div>
 
-    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(typeof finalizeSubmit === 'function') finalizeSubmit()"></iframe>
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"
+    onload="if(typeof finalizeSubmit === 'function') finalizeSubmit()"></iframe>
 
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
                 <div class="bg-blue-600 p-2 rounded-xl shadow-lg"><i data-lucide="layers" class="text-white w-6 h-6"></i></div>
                 <h1 class="text-lg font-black text-slate-800 uppercase">Produção Diária - PCP</h1>
+    
             </div>
             
             <div class="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
                 <div class="relative w-full md:w-64">
                     <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+              
                     <input type="text" id="search-input" oninput="filterCards()" placeholder="Procurar..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm outline-none">
                 </div>
                 
                 <div class="flex gap-2">
-                    <a href="https://catalogo-de-kits-queonetics.vercel.app/" target="_blank" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full text-[9px] font-bold uppercase transition-all flex items-center gap-2 border border-slate-200 shadow-sm">
+                    <a href="https://catalogo-de-kits-queonetics.vercel.app/" target="_blank" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full text-[9px] 
+font-bold uppercase transition-all flex items-center gap-2 border border-slate-200 shadow-sm">
                         <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-600"></i> Catálogo de Kits
                     </a>
                     <a href="https://converso-cartao-rfid.vercel.app/" target="_blank" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full text-[9px] font-bold uppercase transition-all flex items-center gap-2 border border-slate-200 shadow-sm">
+   
                         <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-blue-600"></i> Conversor RFID
                     </a>
                 </div>
@@ -75,66 +85,81 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-6">
+     
         <div class="flex solid-panel rounded-2xl shadow-sm mb-6 p-1 overflow-x-auto">
             <button onclick="switchTab('tiago')" id="btn-tiago" class="tab-button active flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> TIAGO</button>
             <button onclick="switchTab('alana')" id="btn-alana" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> ALANA</button>
             <button onclick="switchTab('william')" id="btn-william" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> WILLIAM</button>
+  
             <button onclick="switchTab('viviane')" id="btn-viviane" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> VIVIANE</button>
             <button onclick="switchTab('concluidos')" id="btn-concluidos" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all text-emerald-600"><i data-lucide="check-circle" class="w-4 h-4"></i> CONCLUÍDOS</button>
             <button onclick="switchTab('etiquetas')" id="btn-etiquetas" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all text-amber-600"><i data-lucide="tag" class="w-4 h-4"></i> ETIQUETAS</button>
         </div>
 
+     
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <aside class="space-y-4">
                 <div class="solid-panel p-5 rounded-3xl shadow-sm">
                     <h2 class="font-bold text-slate-700 mb-4 uppercase text-[10px] tracking-widest">Importar para: <span id="current-name" class="text-blue-600">Tiago</span></h2>
                     <div class="space-y-3">
+         
                         <label class="relative block group">
                             <div class="h-28 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center bg-slate-50 group-hover:bg-blue-50 cursor-pointer transition-all text-center px-4">
                                 <i data-lucide="file-spreadsheet" class="w-8 h-8 text-slate-300"></i>
+   
                                 <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">Clique para selecionar CSV ou XLSX</span>
                             </div>
-                            <input type="file" id="file-input" accept=".csv, .xlsx, .xls" class="hidden" onchange="handleFileUpload(event)">
+                            <input type="file" id="file-input" accept=".csv, .xlsx, 
+.xls" class="hidden" onchange="handleFileUpload(event)">
                         </label>
                         
                         <textarea id="paste-area" placeholder="Cole tabela para adicionar chamados OU cole lista de seriais..." class="w-full h-20 p-4 border border-slate-200 rounded-2xl text-[10px] outline-none bg-slate-50 resize-none"></textarea>
+     
                         
                         <div class="flex gap-2">
                             <button onclick="processPastedData()" class="flex-1 bg-slate-900 text-white py-2.5 rounded-xl font-bold text-[9px] uppercase shadow-lg hover:bg-slate-800 transition-all" title="Importar chamados a partir de texto copiado">Importar</button>
+        
                             <button onclick="formatarSeriais()" id="btn-formatar" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold text-[9px] uppercase shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-1" title="Transformar lista em formato separado por vírgulas"><i data-lucide="code" class="w-3 h-3"></i> Por Vírgulas</button>
                         </div>
                     </div>
+       
                 </div>
 
                 <div class="bg-slate-900 p-5 rounded-3xl text-white shadow-lg">
                     <div class="grid grid-cols-2 gap-3 mb-4 text-center">
                         <div class="bg-white/5 p-3 rounded-2xl border border-white/10"><p class="text-[9px] opacity-50 uppercase">Pendentes</p><p class="text-2xl font-black" id="stat-total">0</p></div>
+          
                         <div class="bg-white/5 p-3 rounded-2xl border border-white/10"><p class="text-[9px] opacity-50 uppercase">Feitos</p><p class="text-2xl font-black text-emerald-400" id="stat-done">0</p></div>
                     </div>
                     <button onclick="clearCurrentTab()" class="w-full py-2 bg-red-500/20 text-red-400 rounded-xl text-[10px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Limpar Registos Locais</button>
                 </div>
+    
             </aside>
 
             <section id="cards-grid" class="lg:col-span-2">
                 <div id="concluidos-tools" class="hidden mb-4 solid-panel p-4 rounded-3xl shadow-sm border-l-4 border-l-emerald-500 bg-emerald-50/50">
                     <button onclick="acaoSalvarTodos()" class="w-full bg-violet-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-violet-700 transition-all">Sincronizar Todos com Planilha Google</button>
+               
                 </div>
                 <div id="etiquetas-tools" class="hidden mb-4 solid-panel p-4 rounded-3xl shadow-sm border-l-4 border-l-amber-500 bg-amber-50/50">
                     <button onclick="exportarEtiquetas()" class="w-full bg-green-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-green-700 transition-all">Gerar Excel de Etiquetas</button>
                 </div>
 
-                <div id="tiago" class="tab-content active"><div class="space-y-4" id="container-tiago"></div></div>
+                <div id="tiago" class="tab-content active"><div class="space-y-4" 
+id="container-tiago"></div></div>
                 <div id="alana" class="tab-content"><div class="space-y-4" id="container-alana"></div></div>
                 <div id="william" class="tab-content"><div class="space-y-4" id="container-william"></div></div>
                 <div id="viviane" class="tab-content"><div class="space-y-4" id="container-viviane"></div></div>
                 <div id="concluidos" class="tab-content"><div class="space-y-4" id="container-concluidos"></div></div>
-                <div id="etiquetas" class="tab-content"><div class="space-y-4" id="container-etiquetas"></div></div>
+                <div id="etiquetas" class="tab-content"><div class="space-y-4" 
+id="container-etiquetas"></div></div>
 
                 <div id="empty-state" class="py-20 text-center opacity-30 flex flex-col items-center">
                     <i data-lucide="inbox" class="w-16 h-16"></i>
                     <p class="text-sm font-black uppercase mt-2">Lista Vazia</p>
                 </div>
             </section>
+ 
         </div>
     </main>
 
@@ -146,7 +171,6 @@
         let currentTab = 'tiago';
         let store = JSON.parse(localStorage.getItem(DB_NAME)) ||
         { tiago: [], alana: [], william: [], viviane: [], concluidos: [], etiquetas: [] };
-        
         // Proteção para migração de nome caso necessário
         if (store.vivine) {
             store.viviane = store.vivine;
@@ -161,7 +185,6 @@
         let isBatchSubmit = false;
 
         const camposSeriais = ["Serial Rastreador", "Iccid", "Serial TX009", "Serial Leitor", "Serial Teclado", "Serial Smart Speaker", "Serial Câmera", "Iccid Camera"];
-        
         function save() { localStorage.setItem(DB_NAME, JSON.stringify(store)); updateStats(); }
 
         function handleFileUpload(event) {
@@ -170,7 +193,6 @@
             
             const isCSV = file.name.toLowerCase().endsWith('.csv');
             const reader = new FileReader();
-            
             reader.onload = (e) => {
                 try {
                     let workbook;
@@ -185,7 +207,6 @@
                     alert("Erro ao ler arquivo. Verifique se o formato é válido.");
                 }
             };
-            
             if (isCSV) {
                 reader.readAsText(file, 'UTF-8');
             } else {
@@ -211,7 +232,6 @@
 
             const seriais = text.split(/[\n\t\s,]+/).filter(s => s.trim() !== '');
             const formatado = seriais.join(',');
-            
             textArea.value = formatado;
 
             navigator.clipboard.writeText(formatado).then(() => {
@@ -220,17 +240,20 @@
                 
                 btn.innerHTML = '<i data-lucide="check" class="w-3 h-3"></i> Copiado!';
                 btn.classList.replace('bg-blue-600', 'bg-emerald-600');
+  
                 btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700');
                 lucide.createIcons();
                 
                 setTimeout(() => {
                     btn.innerHTML = originalHtml;
+             
                     btn.classList.replace('bg-emerald-600', 'bg-blue-600');
                     btn.classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
                     lucide.createIcons();
                 }, 2000);
             }).catch(err => {
                 textArea.select();
+    
                 alert("Seriais formatados! Copie o texto da caixa.");
             });
         }
@@ -240,22 +263,24 @@
             if (rows.length < 1) return;
             const rawHeaders = rows[0].map(h => (h || "").toString().trim());
             const dataRows = rows.slice(1);
-            
             const processed = dataRows.map(rowArray => {
                 let item = {};
                 rawHeaders.forEach((h, idx) => {
                     let val = (rowArray[idx] || "").toString().trim();
                     if (!val) return;
+          
                     let cleanKey = h.replace(/Campo personalizado \((.*?)\)/g, '$1').replace('Campo personalizado ', '');
                     if (item[cleanKey]) item[cleanKey] += " + " + val;
                     else item[cleanKey] = val;
                 });
 
+              
                 let titleField = item["Chave da ocorrência"] ? "Chave da ocorrência" : (item["Chamados"] ? "Chamados" : rawHeaders[0]);
                 let link = null;
                 const linkSearch = JSON.stringify(item);
                 
                 const match = linkSearch.match(/(CONFIGURAR|PROCONFIG)-\d+/i);
+          
                 if (match) link = JIRA_BASE_URL + match[0].toUpperCase();
 
                 return { ...item, _id: 'ID-'+Math.random().toString(36).substr(2,9), _origin: currentTab, _link: link, _titleField: titleField };
@@ -272,7 +297,6 @@
             el.classList.remove('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500', 
                                 'bg-red-50', 'border-red-500', 'text-red-600', 'focus:ring-red-500', 
                                 'bg-emerald-50', 'border-emerald-500', 'text-emerald-700', 'focus:ring-emerald-500');
-
             const val = el.value;
             if (val.trim() === '') {
                 el.classList.add('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500');
@@ -330,7 +354,6 @@
             const data = store[currentTab];
             container.innerHTML = '';
             document.getElementById('empty-state').style.display = data.length > 0 ? 'none' : 'flex';
-            
             data.forEach(item => {
                 const isConcluido = currentTab === 'concluidos';
                 const card = document.createElement('div');
@@ -341,10 +364,12 @@
                 
                 camposSeriais.forEach(c => {
                     let val = item[c] || '';
+                 
                     let colorClasses = "bg-slate-50 border-slate-200 focus:ring-blue-500"; 
                     
                     if (val.length > 0) {
                         let digitsOnly = val.replace(/\D/g, '');
+                   
                         let isValid = true;
                         let needsValidation = false;
 
@@ -352,13 +377,13 @@
                             isValid = digitsOnly.length === 20; 
                             needsValidation = true;
                         } else if (c === 'Serial TX009' || c === 'Serial Leitor' || c === 'Serial Teclado') {
-                            isValid = digitsOnly.length === 6; 
+                            isValid = digitsOnly.length === 6;
                             needsValidation = true;
                         } else if (c === 'Serial Smart Speaker') {
-                            isValid = digitsOnly.length === 4; 
+                            isValid = digitsOnly.length === 4;
                             needsValidation = true;
                         } else if (c === 'Serial Câmera') {
-                            isValid = digitsOnly.length === 15; 
+                            isValid = digitsOnly.length === 15;
                             needsValidation = true;
                         } else if (c === 'Serial Rastreador') {
                             needsValidation = true;
@@ -373,6 +398,7 @@
 
                         if (needsValidation) {
                             if (!isValid) {
+                    
                                 colorClasses = "bg-red-50 border-red-500 text-red-600 focus:ring-red-500";
                             } else {
                                 colorClasses = "bg-emerald-50 border-emerald-500 text-emerald-700 focus:ring-emerald-500";
@@ -382,9 +408,11 @@
 
                     inputs += `<div>
                         <label class="text-[7px] font-bold text-slate-400 uppercase">${c}</label>
+      
                         <input type="text" value="${val}" 
                             oninput="updateVal('${item._id}','${c}',this.value); validateField(this, '${c}')" 
                             class="w-full border text-[10px] font-bold rounded-lg px-2 py-1.5 outline-none focus:ring-1 transition-colors ${colorClasses}">
+          
                     </div>`;
                 });
 
@@ -393,22 +421,29 @@
                     if(!k.startsWith('_') && !camposSeriais.includes(k) && k !== item._titleField && v) {
                         details += `<div class="border-l-2 border-slate-100 pl-2"><p class="text-[7px] text-slate-400 font-bold uppercase">${k}</p><p class="text-[9px] font-semibold text-slate-700">${v}</p></div>`;
                     }
+             
                 });
                 
                 card.innerHTML = `
                     <div class="px-4 py-3 bg-slate-50 border-b flex justify-between items-center">
                         <div class="flex items-center gap-2">
                             <span class="text-[11px] font-black text-slate-800">${title}</span>
-                            ${item._link ? `<button onclick="abrirJiraComDados('${item._id}')" class="bg-blue-600 hover:bg-blue-700 text-[9px] text-white px-3 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors">Autopreencher Jira <i data-lucide="external-link" class="w-3 h-3"></i></button>` : ''}
+         
+                            ${item._link ?
+`<button onclick="abrirJiraComDados('${item._id}')" class="bg-blue-600 hover:bg-blue-700 text-[9px] text-white px-3 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors">Autopreencher Jira <i data-lucide="external-link" class="w-3 h-3"></i></button>` : ''}
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="deleteCard('${item._id}')" class="bg-red-50 hover:bg-red-500 text-red-500 hover:text-white px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors flex items-center gap-1" title="Excluir este card"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                            <button onclick="deleteCard('${item._id}')" 
+class="bg-red-50 hover:bg-red-500 text-red-500 hover:text-white px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors flex items-center gap-1" title="Excluir este card"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                             
-                            ${isConcluido ? `<button onclick="enviarIndividual('${item._id}')" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1 rounded-lg text-[9px] font-bold uppercase flex items-center gap-1 transition-colors">Enviar Planilha <i data-lucide="send" class="w-3 h-3"></i></button>` : ''}
-                            ${!isConcluido && currentTab !== 'etiquetas' ? `<button onclick="concluir('${item._id}')" class="bg-slate-900 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors">Concluir</button>` : ''}
+                            ${isConcluido ?
+`<button onclick="enviarIndividual('${item._id}')" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1 rounded-lg text-[9px] font-bold uppercase flex items-center gap-1 transition-colors">Enviar Planilha <i data-lucide="send" class="w-3 h-3"></i></button>` : ''}
+                            ${!isConcluido && currentTab !== 'etiquetas' ?
+`<button onclick="concluir('${item._id}')" class="bg-slate-900 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors">Concluir</button>` : ''}
                         </div>
                     </div>
                     <div class="p-4">
+                      
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">${details}</div>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-2">${inputs}</div>
                     </div>
@@ -436,7 +471,6 @@
             
             const urlJira = new URL(item._link);
             urlJira.searchParams.append("autofill", "true");
-            
             Object.entries(dadosParaEnviar).forEach(([chave, valor]) => {
                 if (valor && valor.toString().trim() !== "") {
                     urlJira.searchParams.append(chave, valor);
@@ -475,15 +509,14 @@
             form.method = 'POST';
             form.action = WEB_APP_URL;
             form.target = 'hidden_iframe';
-            
             Object.entries(item).forEach(([k, v]) => {
                 if (!k.startsWith('_') || k === '_origin') {
                     const inp = document.createElement('input');
                     inp.type = 'hidden'; inp.name = k; inp.value = v;
                     form.appendChild(inp);
+    
                 }
             });
-            
             document.body.appendChild(form);
             form.submit();
             document.body.removeChild(form);
@@ -502,7 +535,6 @@
                 processNextInQueue();
             }
         };
-
         function exportarEtiquetas() {
             if(store.etiquetas.length === 0) return;
             const data = store.etiquetas.map(i => ({
@@ -510,6 +542,7 @@
                 "ICCID": i["Iccid"] || "",
                 "Cliente": i["Branch via argos"] || i["Branch Via Argo"] || "",
                 "Serviço": i["Tipo de serviço"] || "",
+         
                 "Placa": i["Placas"] || "",
 		        "Tipo de firmware": i["Tipo de firmware"] || "",
                 "Data": i._concluidoEm || "",
@@ -525,6 +558,7 @@
                     store.etiquetas = [];
                     save();
                     render();
+          
                 }
             }, 500);
         }
@@ -551,7 +585,7 @@
             
             document.getElementById('search-input').value = '';
             
-            render(); 
+            render();
         }
         
         function updateStats() {
@@ -569,7 +603,6 @@
                 
                 if (isMatch) visibleCount++; 
             });
-
             if (q.trim() !== '') {
                 if (['tiago', 'alana', 'william', 'viviane'].includes(currentTab)) {
                     document.getElementById('stat-total').innerText = visibleCount;
@@ -577,11 +610,12 @@
                     document.getElementById('stat-done').innerText = visibleCount;
                 }
             } else {
-                updateStats(); 
+                updateStats();
             }
         }
 
-        window.onload = () => { render(); updateStats(); };
+        window.onload = () => { render();
+        updateStats(); };
     </script>
 </body>
 </html>

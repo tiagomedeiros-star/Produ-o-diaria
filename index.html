@@ -38,57 +38,14 @@
             flex-direction: column;
             backdrop-filter: blur(4px);
         }
-
-        #print-area { 
-            position: absolute;
-            left: -99999px;
-            top: -99999px;
-            visibility: hidden;
-        }
-
-        @media print {
-            html, body {
-                width: 100% !important;
-                height: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: hidden !important; 
-                background: white !important;
-            }
-            body > *:not(#print-area) { display: none !important; }
-            
-            #print-area {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-                visibility: visible !important;
-                display: flex !important;
-                width: 110mm !important; 
-                height: 29mm !important;
-                padding: 1mm 4mm !important; 
-                box-sizing: border-box !important;
-                align-items: center !important;
-                justify-content: center !important;
-                background: white !important;
-                color: black !important;
-                overflow: hidden !important;
-            }
-            
-            @page {
-                size: 110mm 29mm landscape;
-                margin: 0 !important; 
-            }
-        }
     </style>
 </head>
 <body class="font-sans text-slate-900 pb-10">
 
     <div id="loading-overlay">
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 border-r-4 border-transparent mb-4"></div>
-        <p class="font-black text-blue-800 uppercase tracking-widest text-sm animate-pulse">Processando...</p>
+        <p class="font-black text-blue-800 uppercase tracking-widest text-sm animate-pulse">Enviando para Planilha Google...</p>
     </div>
-
-    <div id="print-area"></div>
 
     <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(typeof finalizeSubmit === 'function') finalizeSubmit()"></iframe>
 
@@ -143,8 +100,8 @@
                         <textarea id="paste-area" placeholder="Cole tabela para adicionar chamados OU cole lista de seriais..." class="w-full h-20 p-4 border border-slate-200 rounded-2xl text-[10px] outline-none bg-slate-50 resize-none"></textarea>
                         
                         <div class="flex gap-2">
-                            <button onclick="processPastedData()" class="flex-1 bg-slate-900 text-white py-2.5 rounded-xl font-bold text-[9px] uppercase shadow-lg hover:bg-slate-800 transition-all">Importar</button>
-                            <button onclick="formatarSeriais()" id="btn-formatar" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold text-[9px] uppercase shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-1"><i data-lucide="code" class="w-3 h-3"></i> Por Vírgulas</button>
+                            <button onclick="processPastedData()" class="flex-1 bg-slate-900 text-white py-2.5 rounded-xl font-bold text-[9px] uppercase shadow-lg hover:bg-slate-800 transition-all" title="Importar chamados a partir de texto copiado">Importar</button>
+                            <button onclick="formatarSeriais()" id="btn-formatar" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold text-[9px] uppercase shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-1" title="Transformar lista em formato separado por vírgulas"><i data-lucide="code" class="w-3 h-3"></i> Por Vírgulas</button>
                         </div>
                     </div>
                 </div>
@@ -162,28 +119,8 @@
                 <div id="concluidos-tools" class="hidden mb-4 solid-panel p-4 rounded-3xl shadow-sm border-l-4 border-l-emerald-500 bg-emerald-50/50">
                     <button onclick="acaoSalvarTodos()" class="w-full bg-violet-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-violet-700 transition-all">Sincronizar Todos com Planilha Google</button>
                 </div>
-                
-                <div id="etiquetas-tools" class="hidden mb-4 solid-panel p-4 rounded-3xl shadow-sm border-l-4 border-l-amber-500 bg-amber-50/50 flex flex-col gap-3">
-                    <div class="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-                        <i data-lucide="printer" class="w-5 h-5 text-amber-600"></i>
-                        <div class="flex-1">
-                            <label class="text-[8px] font-bold text-slate-400 uppercase block mb-0.5">Modelo de Impressão Ativo</label>
-                            <select id="modelo-etiqueta" class="w-full bg-transparent text-[11px] font-black uppercase text-slate-700 outline-none cursor-pointer">
-                                <option value="padrao">Padrão Autoral (Tabela + QR + Placa Invertida)</option>
-                                <option value="teltonika">Modelo Teltonika (2 QRs + Suporte)</option>
-                                <option value="rastreador">Modelo Rastreador (2 QRs + Serviço)</option>
-                                <option value="canlite">Modelo Canlite</option>
-                                <option value="jc400">Modelo JC 400</option>
-                                <option value="jc400ad">Modelo JC 400AD</option>
-                                <option value="jc450">Modelo JC 450</option>
-                                <option value="serial">Modelo Serial Fixação</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-2 w-full">
-                        <button onclick="exportarEtiquetas()" class="w-full bg-green-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-green-700 transition-all">Gerar Excel de Etiquetas</button>
-                    </div>
+                <div id="etiquetas-tools" class="hidden mb-4 solid-panel p-4 rounded-3xl shadow-sm border-l-4 border-l-amber-500 bg-amber-50/50">
+                    <button onclick="exportarEtiquetas()" class="w-full bg-green-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-green-700 transition-all">Gerar Excel de Etiquetas</button>
                 </div>
 
                 <div id="tiago" class="tab-content active"><div class="space-y-4" id="container-tiago"></div></div>
@@ -207,8 +144,10 @@
         const JIRA_BASE_URL = "https://jira.trixlog.com/browse/";
         
         let currentTab = 'tiago';
-        let store = JSON.parse(localStorage.getItem(DB_NAME)) || { tiago: [], alana: [], william: [], viviane: [], concluidos: [], etiquetas: [] };
-
+        let store = JSON.parse(localStorage.getItem(DB_NAME)) ||
+        { tiago: [], alana: [], william: [], viviane: [], concluidos: [], etiquetas: [] };
+        
+        // Proteção para migração de nome caso necessário
         if (store.vivine) {
             store.viviane = store.vivine;
             delete store.vivine;
@@ -220,7 +159,6 @@
         let submissionQueue = [];
         let currentProcessingId = null;
         let isBatchSubmit = false;
-        let lastJumpTime = 0;
 
         const camposSeriais = ["Serial Rastreador", "Iccid", "Serial TX009", "Serial Leitor", "Serial Teclado", "Serial Smart Speaker", "Serial Câmera", "Iccid Camera"];
         
@@ -273,6 +211,7 @@
 
             const seriais = text.split(/[\n\t\s,]+/).filter(s => s.trim() !== '');
             const formatado = seriais.join(',');
+            
             textArea.value = formatado;
 
             navigator.clipboard.writeText(formatado).then(() => {
@@ -301,6 +240,7 @@
             if (rows.length < 1) return;
             const rawHeaders = rows[0].map(h => (h || "").toString().trim());
             const dataRows = rows.slice(1);
+            
             const processed = dataRows.map(rowArray => {
                 let item = {};
                 rawHeaders.forEach((h, idx) => {
@@ -332,6 +272,7 @@
             el.classList.remove('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500', 
                                 'bg-red-50', 'border-red-500', 'text-red-600', 'focus:ring-red-500', 
                                 'bg-emerald-50', 'border-emerald-500', 'text-emerald-700', 'focus:ring-emerald-500');
+
             const val = el.value;
             if (val.trim() === '') {
                 el.classList.add('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500');
@@ -384,77 +325,12 @@
             save(); render();
         }
 
-        function handleEnter(e, cardId) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                advanceToNextInput(e.target, cardId);
-            }
-        }
-
-        function advanceToNextInput(currentEl, cardId) {
-            const now = Date.now();
-            if (now - lastJumpTime < 150) return; 
-
-            const inputs = Array.from(document.querySelectorAll(`.serial-input-${cardId}`));
-            const currentIndex = inputs.indexOf(currentEl);
-            
-            for (let i = currentIndex + 1; i < inputs.length; i++) {
-                if (inputs[i].value.trim() === '') {
-                    inputs[i].focus();
-                    lastJumpTime = now;
-                    return;
-                }
-            }
-            
-            if (currentIndex > -1 && currentIndex < inputs.length - 1) {
-                inputs[currentIndex + 1].focus();
-                lastJumpTime = now;
-            }
-        }
-
-        function validateAndAdvance(el, campo, cardId) {
-            const val = String(el.value || '');
-            const digitsOnly = val.replace(/\D/g, '');
-            
-            el.classList.remove(
-                'bg-slate-50', 'border-slate-200', 'focus:ring-blue-500',
-                'bg-red-50', 'border-red-500', 'text-red-600', 'focus:ring-red-500',
-                'bg-emerald-50', 'border-emerald-500', 'text-emerald-700', 'focus:ring-emerald-500'
-            );
-
-            if (val.trim() === '') { 
-                el.classList.add('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500'); 
-                el.dataset.valid = "false";
-                return; 
-            }
-
-            let isValid = false;
-            if (campo === 'Iccid' || campo === 'Iccid Camera') isValid = digitsOnly.length === 20;
-            else if (campo === 'Serial TX009' || campo === 'Serial Leitor' || campo === 'Serial Teclado') isValid = digitsOnly.length === 6;
-            else if (campo === 'Serial Smart Speaker') isValid = digitsOnly.length === 4;
-            else if (campo === 'Serial Câmera') isValid = digitsOnly.length === 15;
-            else if (campo === 'Serial Rastreador') {
-                if (digitsOnly.startsWith('4675') || digitsOnly.startsWith('4634')) isValid = digitsOnly.length === 10;
-                else if (digitsOnly.startsWith('86') || digitsOnly.startsWith('35')) isValid = digitsOnly.length === 15;
-            }
-
-            if (!isValid) {
-                el.classList.add('bg-red-50', 'border-red-500', 'text-red-600', 'focus:ring-red-500');
-                el.dataset.valid = "false";
-            } else {
-                el.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-700', 'focus:ring-emerald-500');
-                if (el.dataset.valid !== "true") {
-                    el.dataset.valid = "true";
-                    advanceToNextInput(el, cardId); 
-                }
-            }
-        }
-
         function render() {
             const container = document.getElementById('container-' + currentTab);
             const data = store[currentTab];
             container.innerHTML = '';
             document.getElementById('empty-state').style.display = data.length > 0 ? 'none' : 'flex';
+            
             data.forEach(item => {
                 const isConcluido = currentTab === 'concluidos';
                 const card = document.createElement('div');
@@ -476,13 +352,13 @@
                             isValid = digitsOnly.length === 20; 
                             needsValidation = true;
                         } else if (c === 'Serial TX009' || c === 'Serial Leitor' || c === 'Serial Teclado') {
-                            isValid = digitsOnly.length === 6;
+                            isValid = digitsOnly.length === 6; 
                             needsValidation = true;
                         } else if (c === 'Serial Smart Speaker') {
-                            isValid = digitsOnly.length === 4;
+                            isValid = digitsOnly.length === 4; 
                             needsValidation = true;
                         } else if (c === 'Serial Câmera') {
-                            isValid = digitsOnly.length === 15;
+                            isValid = digitsOnly.length === 15; 
                             needsValidation = true;
                         } else if (c === 'Serial Rastreador') {
                             needsValidation = true;
@@ -507,9 +383,8 @@
                     inputs += `<div>
                         <label class="text-[7px] font-bold text-slate-400 uppercase">${c}</label>
                         <input type="text" value="${val}" 
-                            onkeydown="handleEnter(event, '${item._id}')" 
-                            oninput="updateVal('${item._id}','${c}',this.value); validateAndAdvance(this, '${c}', '${item._id}')" 
-                            class="serial-input-${item._id} w-full border text-[10px] font-bold rounded-lg px-2 py-1.5 outline-none focus:ring-1 transition-colors ${colorClasses}">
+                            oninput="updateVal('${item._id}','${c}',this.value); validateField(this, '${c}')" 
+                            class="w-full border text-[10px] font-bold rounded-lg px-2 py-1.5 outline-none focus:ring-1 transition-colors ${colorClasses}">
                     </div>`;
                 });
 
@@ -530,9 +405,6 @@
                             <button onclick="deleteCard('${item._id}')" class="bg-red-50 hover:bg-red-500 text-red-500 hover:text-white px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors flex items-center gap-1" title="Excluir este card"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                             
                             ${isConcluido ? `<button onclick="enviarIndividual('${item._id}')" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1 rounded-lg text-[9px] font-bold uppercase flex items-center gap-1 transition-colors">Enviar Planilha <i data-lucide="send" class="w-3 h-3"></i></button>` : ''}
-                            
-                            ${currentTab === 'etiquetas' ? `<button onclick="imprimirEtiqueta('${item._id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors flex items-center gap-1"><i data-lucide="printer" class="w-3 h-3"></i> Imprimir Etiqueta</button>` : ''}
-                            
                             ${!isConcluido && currentTab !== 'etiquetas' ? `<button onclick="concluir('${item._id}')" class="bg-slate-900 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors">Concluir</button>` : ''}
                         </div>
                     </div>
@@ -564,6 +436,7 @@
             
             const urlJira = new URL(item._link);
             urlJira.searchParams.append("autofill", "true");
+            
             Object.entries(dadosParaEnviar).forEach(([chave, valor]) => {
                 if (valor && valor.toString().trim() !== "") {
                     urlJira.searchParams.append(chave, valor);
@@ -602,6 +475,7 @@
             form.method = 'POST';
             form.action = WEB_APP_URL;
             form.target = 'hidden_iframe';
+            
             Object.entries(item).forEach(([k, v]) => {
                 if (!k.startsWith('_') || k === '_origin') {
                     const inp = document.createElement('input');
@@ -609,6 +483,7 @@
                     form.appendChild(inp);
                 }
             });
+            
             document.body.appendChild(form);
             form.submit();
             document.body.removeChild(form);
@@ -627,259 +502,6 @@
                 processNextInQueue();
             }
         };
-
-        // =========================================================================
-        // NOVO MOTOR DE IMPRESSÃO - DESIGN AUTORAL INDUSTRIAL
-        // =========================================================================
-        
-        // Logo Puxada direto do seu GitHub! (Com filtro térmico p/ Preto e Branco)
-        const logoQueo = `
-            <div style="display:flex; align-items:center; justify-content:center;">
-                <img src="https://raw.githubusercontent.com/tiagomedeiros-star/Produ-o-diaria/main/logoqueonetics.png" style="max-width:18mm; max-height:10mm; object-fit:contain; filter: grayscale(100%) contrast(200%);">
-            </div>
-        `;
-
-        function imprimirEtiqueta(id) {
-            try {
-                const item = store.etiquetas.find(x => x._id === id);
-                if(!item) { alert("Card não encontrado."); return; }
-
-                const printArea = document.getElementById('print-area');
-                printArea.innerHTML = ''; 
-                
-                // Variáveis Base
-                let title = item[item._titleField] || 'Sem ID';
-                let cli = item['Branch via argos'] || item['Branch Via Argo'] || item['Cliente'] || '';
-                let servico = item['Tipo de serviço'] || '';
-                let placa = item['Placas'] || item['Placa'] || '';
-                let rastreador = item['Serial Rastreador'] || '';
-                let iccid = item['Iccid'] || '';
-                let material = item['Material para manutenção'] || '';
-                
-                // Variáveis Secundárias
-                let tx009 = item['Serial TX009'] || '';
-                let leitor = item['Serial Leitor'] || '';
-                let teclado = item['Serial Teclado'] || '';
-                let smartSpk = item['Serial Smart Speaker'] || '';
-                let camera = item['Serial Câmera'] || item['Serial Camera'] || '';
-
-                const modeloEscolhido = document.getElementById('modelo-etiqueta').value;
-                
-                // CSS Base do Container (Garante proporção 110x29)
-                const baseLayout = "width:108mm; height:27mm; border:1px solid #000; border-radius:1.5mm; box-sizing:border-box; display:flex; background:#fff; font-family:Arial, sans-serif; overflow:hidden;";
-                let html = '';
-
-                // ==========================================
-                // 1. PADRÃO GERAL (Tabela Industrial)
-                // ==========================================
-                if (modeloEscolhido === 'padrao') {
-                    let req = item['Tipo de requisição'] || '';
-                    let proj = item['Projetos'] || item['Projeto'] || '';
-                    const campos = [title, req, cli, servico, proj, placa, rastreador, tx009, leitor, teclado, smartSpk, camera];
-                    let qrExportText = campos.map(f => String(f || "").replace(/(\r\n|\n|\r|;)/gm, " ")).join(";");
-
-                    html = `
-                        <div style="${baseLayout} flex-direction:column;">
-                            <div style="background:#000; color:#fff; padding:1mm 2mm; display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-size:10px; font-weight:900;">${title}</span>
-                                <span style="font-size:9px; font-weight:900; background:#fff; color:#000; padding:0.5px 2mm; border-radius:1mm;">${placa || 'S/ PLACA'}</span>
-                            </div>
-                            <div style="display:flex; flex:1;">
-                                <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr 1fr; padding:1mm; gap:0.5mm;">
-                                    ${rastreador ? `<div style="border-bottom:1px dotted #ccc; display:flex; flex-direction:column; justify-content:center;"><span style="font-size:5px; font-weight:bold;">RASTREADOR:</span> <span style="font-family:monospace; font-size:9px; font-weight:900;">${rastreador}</span></div>` : ''}
-                                    ${tx009 ? `<div style="border-bottom:1px dotted #ccc; border-left:1px solid #eee; padding-left:1mm; display:flex; flex-direction:column; justify-content:center;"><span style="font-size:5px; font-weight:bold;">TX009:</span> <span style="font-family:monospace; font-size:9px; font-weight:900;">${tx009}</span></div>` : ''}
-                                    ${leitor ? `<div style="border-bottom:1px dotted #ccc; display:flex; flex-direction:column; justify-content:center;"><span style="font-size:5px; font-weight:bold;">LEITOR:</span> <span style="font-family:monospace; font-size:9px; font-weight:900;">${leitor}</span></div>` : ''}
-                                    ${teclado ? `<div style="border-bottom:1px dotted #ccc; border-left:1px solid #eee; padding-left:1mm; display:flex; flex-direction:column; justify-content:center;"><span style="font-size:5px; font-weight:bold;">TECLADO:</span> <span style="font-family:monospace; font-size:9px; font-weight:900;">${teclado}</span></div>` : ''}
-                                    ${smartSpk ? `<div style="display:flex; flex-direction:column; justify-content:center;"><span style="font-size:5px; font-weight:bold;">SMART SPK:</span> <span style="font-family:monospace; font-size:9px; font-weight:900;">${smartSpk}</span></div>` : ''}
-                                    ${camera ? `<div style="border-left:1px solid #eee; padding-left:1mm; display:flex; flex-direction:column; justify-content:center;"><span style="font-size:5px; font-weight:bold;">CÂMERA:</span> <span style="font-family:monospace; font-size:9px; font-weight:900;">${camera}</span></div>` : ''}
-                                </div>
-                                <div style="width:23mm; border-left:1px solid #000; display:flex; align-items:center; justify-content:center; background:#fafafa;">
-                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=0&ecc=L&data=${encodeURIComponent(qrExportText)}" style="width:19mm; height:19mm;">
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } 
-                
-                // ==========================================
-                // 2 & 3. TELTONIKA E RASTREADOR (2 QRs Mestre)
-                // ==========================================
-                else if (modeloEscolhido === 'teltonika' || modeloEscolhido === 'rastreador') {
-                    if(cli.length > 40) cli = cli.substring(0, 40) + '...';
-                    if(servico.length > 50) servico = servico.substring(0, 50) + '...';
-
-                    html = `
-                        <div style="${baseLayout}">
-                            <div style="width:24mm; border-right:1px solid #000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:1mm;">
-                                ${logoQueo}
-                                <div style="background:#000; color:#fff; font-size:4.5px; font-weight:900; padding:1px; width:100%; border-radius:1px; margin-top:1.5mm;">SUPORTE</div>
-                                <div style="font-size:7px; font-weight:900; margin-top:1px;">(85) 99420-3207</div>
-                            </div>
-                            
-                            <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between; padding:1.5mm 2mm;">
-                                <div>
-                                    <div style="display:flex; align-items:baseline; gap:1.5mm;">
-                                        <span style="font-size:6.5px; font-weight:900;">S/N:</span>
-                                        <span style="font-size:11px; font-weight:900; font-family:monospace; letter-spacing:-0.5px;">${rastreador}</span>
-                                    </div>
-                                    <div style="display:flex; align-items:baseline; gap:1.5mm; margin-top:1px;">
-                                        <span style="font-size:6.5px; font-weight:900;">ICC:</span>
-                                        <span style="font-size:11px; font-weight:900; font-family:monospace; letter-spacing:-0.5px;">${iccid}</span>
-                                    </div>
-                                </div>
-                                <div style="border-top:1px dotted #000; padding-top:1mm; margin-top:1mm;">
-                                    <div style="font-size:8px; font-weight:900; text-transform:uppercase; white-space:nowrap; overflow:hidden;">${cli}</div>
-                                    <div style="font-size:5px; font-weight:bold; text-transform:uppercase; white-space:nowrap; overflow:hidden;">SRV: ${servico}</div>
-                                </div>
-                            </div>
-                            
-                            <div style="width:28mm; border-left:1px solid #000; display:flex; flex-direction:column; justify-content:space-between; align-items:center; padding:1mm;">
-                                <div style="background:#000; color:#fff; font-size:10px; font-weight:900; width:100%; text-align:center; border-radius:1px; padding:0.5px 0;">${placa || 'S/ PLACA'}</div>
-                                <div style="display:flex; justify-content:space-between; width:100%; margin-top:auto;">
-                                    <div style="display:flex; flex-direction:column; align-items:center;">
-                                        <span style="font-size:4.5px; font-weight:900;">SERIAL</span>
-                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&ecc=L&data=${encodeURIComponent(rastreador)}" style="width:11mm; height:11mm;">
-                                    </div>
-                                    <div style="display:flex; flex-direction:column; align-items:center;">
-                                        <span style="font-size:4.5px; font-weight:900;">ICCID</span>
-                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&ecc=L&data=${encodeURIComponent(iccid)}" style="width:11mm; height:11mm;">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // ==========================================
-                // 4. MODELOS JC (400, 400AD, 450)
-                // ==========================================
-                else if (modeloEscolhido.startsWith('jc4')) {
-                    let tituloJC = modeloEscolhido === 'jc400' ? 'JC 400' : (modeloEscolhido === 'jc400ad' ? 'JC 400AD' : 'JC 450');
-                    if(cli.length > 50) cli = cli.substring(0, 50) + '...';
-
-                    html = `
-                        <div style="${baseLayout}">
-                            <div style="width:24mm; border-right:1px solid #000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:1mm;">
-                                ${logoQueo}
-                            </div>
-                            <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between; padding:2mm;">
-                                <div style="font-family:'Arial Black',sans-serif; font-size:18px; font-weight:900; line-height:1; letter-spacing:-0.5px;">${tituloJC}</div>
-                                <div style="margin-top:1.5mm;">
-                                    <div style="display:flex; align-items:baseline; gap:2mm;">
-                                        <span style="font-size:8px; font-weight:900;">SERIAL:</span>
-                                        <span style="font-size:13px; font-weight:900; font-family:monospace;">${rastreador}</span>
-                                    </div>
-                                    <div style="display:flex; align-items:baseline; gap:2mm;">
-                                        <span style="font-size:8px; font-weight:900;">ICCID:</span>
-                                        <span style="font-size:13px; font-weight:900; font-family:monospace;">${iccid}</span>
-                                    </div>
-                                </div>
-                                <div style="margin-top:auto; padding-top:1mm; border-top:1px solid #000; font-size:9px; font-weight:900; text-align:center; white-space:nowrap; overflow:hidden;">${cli}</div>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // ==========================================
-                // 5. CANLITE
-                // ==========================================
-                else if (modeloEscolhido === 'canlite') {
-                    let fwData = item._concluidoEm ? item._concluidoEm.split(' ')[0] : new Date().toLocaleDateString('pt-BR');
-                    let versao = item['Configuração do rastreador'] || item['Versão'] || 'REV5B/C';
-                    let fwText = item['Tipo de firmware'] || 'v7.1.06-Temp-Truck';
-                    if(versao.length > 25) versao = versao.substring(0, 25) + '...';
-                    if(fwText.length > 40) fwText = fwText.substring(0, 40) + '...';
-                    if(servico.length > 45) servico = servico.substring(0, 45) + '...';
-
-                    html = `
-                        <div style="${baseLayout}">
-                            <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between; padding:2mm;">
-                                <div style="font-family:'Arial Black',sans-serif; font-size:18px; font-weight:900; line-height:1;">CANLITE</div>
-                                
-                                <div style="display:flex; align-items:baseline; gap:2mm; margin-top:2mm;">
-                                    <span style="font-size:8px; font-weight:900;">DATA FW:</span>
-                                    <span style="font-size:11px; font-weight:900; font-family:monospace;">${fwData}</span>
-                                </div>
-                                <div style="display:flex; align-items:baseline; gap:2mm;">
-                                    <span style="font-size:8px; font-weight:900;">VERSÃO:</span>
-                                    <span style="font-size:11px; font-weight:900; font-family:monospace;">${versao}</span>
-                                </div>
-                                <div style="display:flex; align-items:baseline; gap:2mm;">
-                                    <span style="font-size:8px; font-weight:900;">SERVIÇO:</span>
-                                    <span style="font-size:7px; font-weight:bold;">${servico}</span>
-                                </div>
-
-                                <div style="margin-top:auto; padding-top:1mm; border-top:1px solid #000;">
-                                    <span style="font-size:9px; font-weight:900;">FW:</span> 
-                                    <span style="font-size:9px; font-weight:bold;">${fwText}</span>
-                                </div>
-                            </div>
-                            <div style="width:26mm; border-left:1px solid #000; display:flex; align-items:center; justify-content:center;">
-                                ${logoQueo}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // ==========================================
-                // 6. SERIAL FIXAÇÃO
-                // ==========================================
-                else if (modeloEscolhido === 'serial') {
-                    if(material.length > 55) material = material.substring(0, 55) + '...';
-                    if(cli.length > 40) cli = cli.substring(0, 40) + '...';
-                    
-                    html = `
-                        <div style="${baseLayout} flex-direction:column; justify-content:space-between; padding:2mm;">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                <div style="font-size:13px; font-weight:900; line-height:1.1; max-width:70%;">${material}</div>
-                                ${logoQueo}
-                            </div>
-                            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-                                <div style="font-size:10px; font-weight:800; max-width:60%;">${cli}</div>
-                                <div style="background:#000; color:#fff; font-size:15px; font-weight:900; padding:1mm 4mm; border-radius:1.5mm; letter-spacing:1px;">${placa || 'S/ PLACA'}</div>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // Insere HTML na página
-                printArea.innerHTML = html;
-
-                // --- SENSOR INTELIGENTE DE CARREGAMENTO DE IMAGENS ---
-                const images = printArea.querySelectorAll('img');
-                
-                if (images.length === 0) {
-                    setTimeout(() => window.print(), 100);
-                } else {
-                    let loadedCount = 0;
-                    let timeoutBypass = false;
-
-                    const safetyTimer = setTimeout(() => {
-                        timeoutBypass = true;
-                        window.print();
-                    }, 2000);
-
-                    images.forEach(img => {
-                        if (img.complete) {
-                            loadedCount++;
-                            if (loadedCount === images.length && !timeoutBypass) {
-                                clearTimeout(safetyTimer);
-                                setTimeout(() => window.print(), 100);
-                            }
-                        } else {
-                            img.onload = img.onerror = () => {
-                                loadedCount++;
-                                if (loadedCount === images.length && !timeoutBypass) {
-                                    clearTimeout(safetyTimer);
-                                    setTimeout(() => window.print(), 100);
-                                }
-                            };
-                        }
-                    });
-                }
-
-            } catch (error) { alert("Erro inesperado. Recarregue a página."); }
-        }
 
         function exportarEtiquetas() {
             if(store.etiquetas.length === 0) return;
@@ -929,7 +551,7 @@
             
             document.getElementById('search-input').value = '';
             
-            render();
+            render(); 
         }
         
         function updateStats() {
@@ -947,6 +569,7 @@
                 
                 if (isMatch) visibleCount++; 
             });
+
             if (q.trim() !== '') {
                 if (['tiago', 'alana', 'william', 'viviane'].includes(currentTab)) {
                     document.getElementById('stat-total').innerText = visibleCount;
@@ -954,7 +577,7 @@
                     document.getElementById('stat-done').innerText = visibleCount;
                 }
             } else {
-                updateStats();
+                updateStats(); 
             }
         }
 

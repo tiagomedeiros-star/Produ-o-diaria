@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Produção Diária - PCP</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -12,9 +13,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
+    <!-- Scripts do Firebase (Incluindo Auth) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+
     <style>
         body {
-            /* APLICANDO A NOVA FONTE */
             font-family: 'Inter', sans-serif;
             background-image: linear-gradient(rgba(248, 250, 252, 0.7), rgba(248, 250, 252, 0.8)), url('unnamed.jpg');
             background-size: cover;
@@ -34,16 +39,43 @@
         .card-animation { animation: fadeInScale 0.3s ease-out forwards; }
         @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .solid-panel { background-color: #ffffff; border: 1px solid #e2e8f0; }
-        #loading-overlay {
+        
+        #loading-overlay, #cloud-modal-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(255,255,255,0.95);
             z-index: 9999;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
             backdrop-filter: blur(4px);
+        }
+        #loading-overlay { background: rgba(255,255,255,0.95); flex-direction: column; }
+        #cloud-modal-overlay { background: rgba(15, 23, 42, 0.6); padding: 1rem; }
+        
+        /* Oculta o app antes do login */
+        #app-content { display: none; }
+
+        /* Estilo da tela de login com o wallpaper */
+        #login-screen {
+            background-image: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.8)), url('https://raw.githubusercontent.com/tiaguimbc/producao-diaria/main/unnamed.jpg');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Custom Scrollbar super elegante para o Modal */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
 </head>
@@ -51,153 +83,643 @@
 
     <div id="loading-overlay">
         <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-600 border-r-4 border-transparent mb-4"></div>
-        <p class="font-black text-blue-800 uppercase tracking-widest text-sm animate-pulse">Enviando para Planilha Google...</p>
+        <p id="loading-text" class="font-black text-blue-800 uppercase tracking-widest text-sm animate-pulse">Processando...</p>
     </div>
 
-    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"
-    onload="if(typeof finalizeSubmit === 'function') finalizeSubmit()"></iframe>
+    <!-- TELA DE LOGIN COM PAPEL DE PAREDE -->
+    <div id="login-screen" class="fixed inset-0 z-[99999] flex flex-col items-center justify-center p-4 transition-opacity duration-300">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center card-animation border border-slate-200">
+            <img src="https://raw.githubusercontent.com/tiagomedeiros-star/Produ-o-diaria/main/logoqueonetics.png" alt="Queonetics" class="h-12 mx-auto mb-6 object-contain">
+            <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">Acesso Restrito</h2>
+            <p class="text-xs text-slate-500 font-medium mb-8">Faça login com sua conta corporativa para acessar o PCP.</p>
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            
-            <div class="flex items-center gap-4">
-                <img src="https://raw.githubusercontent.com/tiagomedeiros-star/Produ-o-diaria/main/logoqueonetics.png" alt="Queonetics Logo" class="h-10 object-contain">
-                <div class="hidden md:block h-8 w-px bg-slate-200"></div> <h1 class="text-lg font-black text-slate-800 uppercase tracking-tight">Produção Diária - PCP</h1>
+            <button onclick="loginGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border-2 border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-3.5 rounded-xl font-bold text-sm transition-all shadow-sm">
+                <!-- Ícone SVG do Google -->
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Entrar com o Google
+            </button>
+        </div>
+    </div>
+
+    <!-- TODO O APP FICA AQUI DENTRO -->
+    <div id="app-content">
+        
+        <!-- MODAL DE ESTOQUE NA NUVEM -->
+        <div id="cloud-modal-overlay">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh] overflow-hidden card-animation border border-slate-200 relative">
+                
+                <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center bg-slate-50 gap-4 pr-16 shrink-0">
+                    <h3 class="font-black text-slate-800 uppercase tracking-tight flex items-center gap-2 shrink-0">
+                        <i data-lucide="cloud" class="w-5 h-5 text-violet-600"></i> KITS NO ESTOQUE
+                    </h3>
+                    
+                    <div class="relative w-full max-w-md">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                        <input type="text" id="search-nuvem-input" onkeyup="filtrarNuvem()" placeholder="Pesquisar kit, chamado, cliente, serviço ou serial..." class="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all shadow-sm">
+                    </div>
+                </div>
+
+                <button onclick="fecharEstoqueNuvem()" class="absolute top-4 right-5 text-slate-400 hover:text-red-500 transition-colors bg-white border border-slate-200 p-1.5 rounded-lg shadow-sm z-10">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+
+                <div id="cloud-modal-list" class="p-4 overflow-y-auto flex-1 min-h-0 bg-white custom-scrollbar"></div>
             </div>
-            
-            <div class="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
-                <div class="relative w-full md:w-64">
-                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                    <input type="text" id="search-input" oninput="filterCards()" placeholder="Procurar..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm outline-none">
+        </div>
+
+        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="if(typeof finalizeSubmit === 'function') finalizeSubmit()"></iframe>
+
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                
+                <div class="flex items-center gap-4">
+                    <img src="https://raw.githubusercontent.com/tiagomedeiros-star/Produ-o-diaria/main/logoqueonetics.png" alt="Queonetics Logo" class="h-10 object-contain">
+                    <div class="hidden md:block h-8 w-px bg-slate-200"></div>
+                    <h1 class="text-lg font-black text-slate-800 uppercase tracking-tight">Produção Diária - PCP</h1>
                 </div>
                 
-                <div class="flex gap-2">
-                    <a href="https://catalogo-de-kits-queonetics.vercel.app/" target="_blank" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full text-[9px] font-bold uppercase transition-all flex items-center gap-2 border border-slate-200 shadow-sm">
-                        <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-600"></i> Catálogo de Kits
-                    </a>
-                    <a href="https://converso-cartao-rfid.vercel.app/" target="_blank" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full text-[9px] font-bold uppercase transition-all flex items-center gap-2 border border-slate-200 shadow-sm">
-                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-blue-600"></i> Conversor RFID
-                    </a>
+                <div class="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+                    <div class="relative w-full md:w-64">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                        <input type="text" id="search-input" oninput="filterCards()" placeholder="Procurar..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm outline-none">
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <a href="https://catalogo-de-kits-queonetics.vercel.app/" target="_blank" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full text-[9px] font-bold uppercase transition-all flex items-center gap-2 border border-slate-200 shadow-sm">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-600"></i> Catálogo
+                        </a>
+                        <a href="https://converso-cartao-rfid.vercel.app/" target="_blank" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-full text-[9px] font-bold uppercase transition-all flex items-center gap-2 border border-slate-200 shadow-sm">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-blue-600"></i> Conversor
+                        </a>
+                    </div>
+
+                    <div class="flex items-center gap-3 pl-3 ml-1 border-l border-slate-200">
+                        <div class="hidden md:block text-right">
+                            <p class="text-[8px] font-bold text-slate-400 uppercase leading-tight">Usuário Logado</p>
+                            <p id="user-name-display" class="text-[10px] font-black text-slate-700 leading-tight">Carregando...</p>
+                        </div>
+                        <button onclick="logoutGoogle()" class="bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-600 p-2 rounded-full transition-colors shadow-sm" title="Sair do Sistema">
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
                 </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-6">
-        <div class="flex solid-panel rounded-2xl shadow-sm mb-6 p-1 overflow-x-auto">
-            <button onclick="switchTab('tiago')" id="btn-tiago" class="tab-button active flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> TIAGO</button>
-            <button onclick="switchTab('alana')" id="btn-alana" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> ALANA</button>
-            <button onclick="switchTab('william')" id="btn-william" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> WILLIAM</button>
-            <button onclick="switchTab('viviane')" id="btn-viviane" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> VIVIANE</button>
-            <button onclick="switchTab('concluidos')" id="btn-concluidos" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all text-emerald-600"><i data-lucide="check-circle" class="w-4 h-4"></i> CONCLUÍDOS</button>
-            <button onclick="switchTab('etiquetas')" id="btn-etiquetas" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all text-amber-600"><i data-lucide="tag" class="w-4 h-4"></i> ETIQUETAS</button>
-        </div>
+        <main class="max-w-7xl mx-auto px-4 py-6">
+            <div class="flex solid-panel rounded-2xl shadow-sm mb-6 p-1 overflow-x-auto">
+                <button onclick="switchTab('tiago')" id="btn-tiago" class="tab-button active flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> TIAGO</button>
+                <button onclick="switchTab('alana')" id="btn-alana" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> ALANA</button>
+                <button onclick="switchTab('william')" id="btn-william" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> WILLIAM</button>
+                <button onclick="switchTab('viviane')" id="btn-viviane" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all"><i data-lucide="user" class="w-4 h-4"></i> VIVIANE</button>
+                
+                <button onclick="switchTab('bolsoes')" id="btn-bolsoes" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all text-violet-600 font-bold"><i data-lucide="package" class="w-4 h-4"></i> KITS - ESTOQUE</button>
+                
+                <button onclick="switchTab('concluidos')" id="btn-concluidos" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all text-emerald-600"><i data-lucide="check-circle" class="w-4 h-4"></i> CONCLUÍDOS</button>
+                <button onclick="switchTab('etiquetas')" id="btn-etiquetas" class="tab-button flex-1 px-4 py-3 text-xs flex items-center justify-center gap-2 rounded-xl transition-all text-amber-600"><i data-lucide="tag" class="w-4 h-4"></i> ETIQUETAS</button>
+            </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <aside class="space-y-4">
-                <div class="solid-panel p-5 rounded-3xl shadow-sm">
-                    <h2 class="font-bold text-slate-700 mb-4 uppercase text-[10px] tracking-widest">Importar para: <span id="current-name" class="text-blue-600">Tiago</span></h2>
-                    <div class="space-y-3">
-                        <label class="relative block group">
-                            <div class="h-28 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center bg-slate-50 group-hover:bg-blue-50 cursor-pointer transition-all text-center px-4">
-                                <i data-lucide="file-spreadsheet" class="w-8 h-8 text-slate-300"></i>
-                                <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">Clique para selecionar CSV ou XLSX</span>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <aside class="space-y-4">
+                    <div class="solid-panel p-5 rounded-3xl shadow-sm">
+                        <h2 class="font-bold text-slate-700 mb-4 uppercase text-[10px] tracking-widest">Importar para: <span id="current-name" class="text-blue-600">Tiago</span></h2>
+                        <div class="space-y-3">
+                            <label class="relative block group">
+                                <div class="h-28 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center bg-slate-50 group-hover:bg-blue-50 cursor-pointer transition-all text-center px-4">
+                                    <i data-lucide="file-spreadsheet" class="w-8 h-8 text-slate-300"></i>
+                                    <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">Clique para selecionar CSV ou XLSX</span>
+                                </div>
+                                <input type="file" id="file-input" accept=".csv, .xlsx, .xls" class="hidden" onchange="handleFileUpload(event)">
+                            </label>
+                            
+                            <textarea id="paste-area" placeholder="Cole tabela para adicionar chamados OU cole lista de seriais..." class="w-full h-20 p-4 border border-slate-200 rounded-2xl text-[10px] outline-none bg-slate-50 resize-none"></textarea>
+                            
+                            <div class="flex gap-2">
+                                <button onclick="processPastedData()" class="flex-1 bg-slate-900 text-white py-2.5 rounded-xl font-bold text-[9px] uppercase shadow-lg hover:bg-slate-800 transition-all">Importar</button>
+                                <button onclick="formatarSeriais()" id="btn-formatar" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold text-[9px] uppercase shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-1"><i data-lucide="code" class="w-3 h-3"></i> Por Vírgulas</button>
                             </div>
-                            <input type="file" id="file-input" accept=".csv, .xlsx, .xls" class="hidden" onchange="handleFileUpload(event)">
-                        </label>
-                        
-                        <textarea id="paste-area" placeholder="Cole tabela para adicionar chamados OU cole lista de seriais..." class="w-full h-20 p-4 border border-slate-200 rounded-2xl text-[10px] outline-none bg-slate-50 resize-none"></textarea>
-                        
-                        <div class="flex gap-2">
-                            <button onclick="processPastedData()" class="flex-1 bg-slate-900 text-white py-2.5 rounded-xl font-bold text-[9px] uppercase shadow-lg hover:bg-slate-800 transition-all" title="Importar chamados a partir de texto copiado">Importar</button>
-                            <button onclick="formatarSeriais()" id="btn-formatar" class="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold text-[9px] uppercase shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-1" title="Transformar lista em formato separado por vírgulas"><i data-lucide="code" class="w-3 h-3"></i> Por Vírgulas</button>
                         </div>
                     </div>
-                </div>
 
-                <div class="bg-slate-900 p-5 rounded-3xl text-white shadow-lg">
-                    <div class="grid grid-cols-2 gap-3 mb-4 text-center">
-                        <div class="bg-white/5 p-3 rounded-2xl border border-white/10"><p class="text-[9px] opacity-50 uppercase">Pendentes</p><p class="text-2xl font-black" id="stat-total">0</p></div>
-                        <div class="bg-white/5 p-3 rounded-2xl border border-white/10"><p class="text-[9px] opacity-50 uppercase">Feitos</p><p class="text-2xl font-black text-emerald-400" id="stat-done">0</p></div>
+                    <div class="bg-slate-900 p-5 rounded-3xl text-white shadow-lg">
+                        <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+                            <div class="bg-white/5 p-2 rounded-xl border border-white/10 flex flex-col justify-center"><p class="text-[8px] opacity-50 uppercase mb-1">Pendentes</p><p class="text-xl font-black leading-none" id="stat-total">0</p></div>
+                            <div class="bg-white/5 p-2 rounded-xl border border-white/10 flex flex-col justify-center"><p class="text-[8px] opacity-50 uppercase mb-1">Feitos</p><p class="text-xl font-black text-emerald-400 leading-none" id="stat-done">0</p></div>
+                            
+                            <div onclick="abrirEstoqueNuvem()" class="bg-violet-900/40 p-2 rounded-xl border border-violet-500/30 cursor-pointer hover:bg-violet-800/60 transition-colors shadow-lg shadow-violet-900/20 group flex flex-col justify-center" title="Clique para ver a lista de Kits no Estoque">
+                                <p class="text-[7.5px] leading-tight opacity-70 uppercase text-violet-300 flex items-center justify-center gap-1 text-center mb-1">KITS - ESTOQUE <i data-lucide="external-link" class="w-2 h-2 opacity-50 group-hover:opacity-100 transition-opacity"></i></p>
+                                <p class="text-xl font-black text-violet-400 leading-none" id="stat-nuvem">-</p>
+                            </div>
+                        </div>
+                        <button onclick="clearCurrentTab()" class="w-full py-2 bg-red-500/20 text-red-400 rounded-xl text-[10px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Limpar Registos Locais</button>
                     </div>
-                    <button onclick="clearCurrentTab()" class="w-full py-2 bg-red-500/20 text-red-400 rounded-xl text-[10px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Limpar Registos Locais</button>
-                </div>
-            </aside>
+                </aside>
 
-            <section id="cards-grid" class="lg:col-span-2">
-                <div id="concluidos-tools" class="hidden mb-4 solid-panel p-4 rounded-3xl shadow-sm border-l-4 border-l-emerald-500 bg-emerald-50/50">
-                    <button onclick="acaoSalvarTodos()" class="w-full bg-violet-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-violet-700 transition-all">Sincronizar Todos com Planilha Google</button>
-                </div>
-                <div id="etiquetas-tools" class="hidden mb-4 solid-panel p-4 rounded-3xl shadow-sm border-l-4 border-l-amber-500 bg-amber-50/50">
-                    <button onclick="exportarEtiquetas()" class="w-full bg-green-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-green-700 transition-all">Gerar Excel de Etiquetas</button>
-                </div>
+                <section id="cards-grid" class="lg:col-span-2">
+                    <div id="concluidos-tools" class="hidden mb-4 solid-panel p-4 rounded-3xl shadow-sm border-l-4 border-l-emerald-500 bg-emerald-50/50">
+                        <button onclick="acaoSalvarTodos()" class="w-full bg-emerald-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-emerald-700 transition-all">Sincronizar Todos com Planilha Google</button>
+                    </div>
+                    <div id="etiquetas-tools" class="hidden mb-4 solid-panel p-4 rounded-3xl shadow-sm border-l-4 border-l-amber-500 bg-amber-50/50">
+                        <button onclick="exportarEtiquetas()" class="w-full bg-green-600 text-white px-6 py-3 rounded-xl font-black text-[10px] uppercase shadow-lg hover:bg-green-700 transition-all">Gerar Excel de Etiquetas</button>
+                    </div>
 
-                <div id="tiago" class="tab-content active"><div class="space-y-4" id="container-tiago"></div></div>
-                <div id="alana" class="tab-content"><div class="space-y-4" id="container-alana"></div></div>
-                <div id="william" class="tab-content"><div class="space-y-4" id="container-william"></div></div>
-                <div id="viviane" class="tab-content"><div class="space-y-4" id="container-viviane"></div></div>
-                <div id="concluidos" class="tab-content"><div class="space-y-4" id="container-concluidos"></div></div>
-                <div id="etiquetas" class="tab-content"><div class="space-y-4" id="container-etiquetas"></div></div>
+                    <div id="tiago" class="tab-content active"><div class="space-y-4" id="container-tiago"></div></div>
+                    <div id="alana" class="tab-content"><div class="space-y-4" id="container-alana"></div></div>
+                    <div id="william" class="tab-content"><div class="space-y-4" id="container-william"></div></div>
+                    <div id="viviane" class="tab-content"><div class="space-y-4" id="container-viviane"></div></div>
+                    <div id="bolsoes" class="tab-content"><div class="space-y-4" id="container-bolsoes"></div></div>
+                    <div id="concluidos" class="tab-content"><div class="space-y-4" id="container-concluidos"></div></div>
+                    <div id="etiquetas" class="tab-content"><div class="space-y-4" id="container-etiquetas"></div></div>
 
-                <div id="empty-state" class="py-20 text-center opacity-30 flex flex-col items-center">
-                    <i data-lucide="inbox" class="w-16 h-16"></i>
-                    <p class="text-sm font-black uppercase mt-2">Lista Vazia</p>
-                </div>
-            </section>
-        </div>
-    </main>
+                    <div id="empty-state" class="py-20 text-center opacity-30 flex flex-col items-center">
+                        <i data-lucide="inbox" class="w-16 h-16"></i>
+                        <p class="text-sm font-black uppercase mt-2">Lista Vazia</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
 
     <script>
+        // ==========================================
+        // VARIÁVEIS GLOBAIS E INICIAIS
+        // ==========================================
+        const camposSeriais = ["Serial Rastreador", "Iccid", "Serial TX009", "Serial Leitor", "Serial Teclado", "Serial Smart Speaker", "Serial Câmera", "Iccid Camera"];
         const WEB_APP_URL = "https://script.google.com/a/macros/queonetics.com/s/AKfycby2ftCCf4SipPtZPnMuzzFFBcLoB54OXp4ssOk7hLS0w8aRK-b9C_CmVaR8lJihVgPg/exec";
         const DB_NAME = 'producao_pcp_v5_store';
         const JIRA_BASE_URL = "https://jira.trixlog.com/browse/";
         
         let currentTab = 'tiago';
-        let store = JSON.parse(localStorage.getItem(DB_NAME)) || { tiago: [], alana: [], william: [], viviane: [], concluidos: [], etiquetas: [] };
+        let store = JSON.parse(localStorage.getItem(DB_NAME)) || { tiago: [], alana: [], william: [], viviane: [], bolsoes: [], concluidos: [], etiquetas: [] };
         
-        if (store.vivine) {
-            store.viviane = store.vivine;
-            delete store.vivine;
-            localStorage.setItem(DB_NAME, JSON.stringify(store));
-        } else if (!store.viviane) {
-            store.viviane = [];
-        }
+        if (store.vivine) { store.viviane = store.vivine; delete store.vivine; }
+        if (!store.viviane) store.viviane = [];
+        if (!store.bolsoes) store.bolsoes = [];
+        localStorage.setItem(DB_NAME, JSON.stringify(store));
         
         let submissionQueue = [];
         let currentProcessingId = null;
         let isBatchSubmit = false;
-        
         let lastJumpTime = 0; 
 
-        const camposSeriais = ["Serial Rastreador", "Iccid", "Serial TX009", "Serial Leitor", "Serial Teclado", "Serial Smart Speaker", "Serial Câmera", "Iccid Camera"];
+        // ==========================================
+        // REMOÇÃO DO SERVICE WORKER
+        // ==========================================
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) { registration.unregister(); }
+            });
+        }
+
+        // ==========================================
+        // INICIALIZAÇÃO DO CLOUD FIRESTORE & AUTH
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpDi18ridgdvc1GK6VLHlvJ1UDRbZGyl0",
+            authDomain: "pcp-projeto-4aa40.firebaseapp.com",
+            projectId: "pcp-projeto-4aa40",
+            storageBucket: "pcp-projeto-4aa40.firebasestorage.app",
+            messagingSenderId: "850834146931",
+            appId: "1:850834146931:web:1524870b589fafaaef4c06"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        db.collection('estoque_bolsoes').onSnapshot((snapshot) => {
+            document.getElementById('stat-nuvem').innerText = snapshot.size;
+        }, (error) => {
+            document.getElementById('stat-nuvem').innerText = "!";
+        });
+
+        // ==========================================
+        // SISTEMA DE AUTENTICAÇÃO GOOGLE
+        // ==========================================
+        const provider = new firebase.auth.GoogleAuthProvider();
+
+        function loginGoogle() {
+            showLoading("Autenticando...");
+            firebase.auth().signInWithPopup(provider).catch((error) => {
+                hideLoading();
+                alert("Erro ao fazer login: " + error.message);
+            });
+        }
+
+        function logoutGoogle() {
+            firebase.auth().signOut();
+        }
+
+        firebase.auth().onAuthStateChanged((user) => {
+            hideLoading();
+            if (user) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-content').style.display = 'block';
+                
+                const userNameEl = document.getElementById('user-name-display');
+                if(userNameEl) {
+                    let firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
+                    userNameEl.innerText = firstName;
+                }
+                render();
+                updateStats();
+                lucide.createIcons();
+            } else {
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('app-content').style.display = 'none';
+            }
+        });
+
+        // ==========================================
+        // FILTRAGEM INTELIGENTE DO MODAL
+        // ==========================================
+        function filtrarNuvem() {
+            const termo = document.getElementById('search-nuvem-input').value.toLowerCase();
+            const cards = document.querySelectorAll('.nuvem-card-item');
+            
+            cards.forEach(card => {
+                const textoDoCard = card.innerText.toLowerCase();
+                if (textoDoCard.includes(termo)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // ==========================================
+        // FUNÇÕES DO MODAL (ESTOQUE NA NUVEM)
+        // ==========================================
+        function abrirEstoqueNuvem() {
+            const modal = document.getElementById('cloud-modal-overlay');
+            const lista = document.getElementById('cloud-modal-list');
+            
+            document.getElementById('search-nuvem-input').value = '';
+            
+            modal.style.display = 'flex';
+            lista.innerHTML = '<div class="text-center text-violet-500 py-10 font-bold text-xs animate-pulse">Carregando Estoque...</div>';
+
+            db.collection('estoque_bolsoes').get().then((querySnapshot) => {
+                lista.innerHTML = '';
+                
+                if (querySnapshot.empty) {
+                    lista.innerHTML = `
+                        <div class="text-center text-slate-400 py-10 flex flex-col items-center">
+                            <i data-lucide="package-x" class="w-10 h-10 mb-2 opacity-50"></i>
+                            <p class="font-bold text-xs uppercase tracking-wider">Estoque Vazio</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const dados = doc.data();
+                    const dataLog = dados['_dataSalvamento'] || '--/--/----';
+                    
+                    const branch = dados['_branch_modal'] || dados['Branch via argos'] || dados['Branch Via Argo'] || '';
+                    const tipoServico = dados['_servico_modal'] || dados['Tipo de serviço'] || '';
+                    const tituloChamado = dados['_titulo_modal'] || '';
+                    
+                    let badgesHTML = '';
+                    if(branch) badgesHTML += `<div class="flex items-center gap-1 bg-slate-100 border border-slate-200 px-2 py-1 rounded-md text-[9px] font-bold text-slate-600 shadow-sm"><i data-lucide="map-pin" class="w-3 h-3 text-slate-400"></i> ${branch}</div>`;
+                    if(tipoServico) badgesHTML += `<div class="flex items-center gap-1 bg-slate-100 border border-slate-200 px-2 py-1 rounded-md text-[9px] font-bold text-slate-600 shadow-sm"><i data-lucide="wrench" class="w-3 h-3 text-slate-400"></i> ${tipoServico}</div>`;
+
+                    let previewHTML = '';
+                    camposSeriais.forEach(c => {
+                        if (dados[c] && String(dados[c]).trim() !== '') {
+                            let nomeCurto = c.replace('Serial ', '');
+                            previewHTML += `<span class="inline-block bg-white border border-slate-200 shadow-sm rounded px-1.5 py-0.5 text-[8.5px] font-bold text-slate-500 mr-1.5 mb-1.5">${nomeCurto}: <span class="text-slate-800">${dados[c]}</span></span>`;
+                        }
+                    });
+
+                    if(previewHTML === '') previewHTML = '<span class="text-[9px] text-slate-400 italic">Nenhum serial bipado neste kit</span>';
+                    
+                    lista.innerHTML += `
+                        <div class="nuvem-card-item flex flex-col bg-slate-50 p-4 rounded-xl border border-slate-200 mb-3 hover:border-violet-300 hover:shadow-sm transition-all group gap-2">
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center w-full gap-3">
+                                <div class="flex items-center gap-2">
+                                    <p class="font-black text-slate-800 text-[14px] tracking-tight flex items-center gap-1.5">
+                                        <i data-lucide="package" class="w-4 h-4 text-violet-500"></i> ${doc.id}
+                                    </p>
+                                    ${tituloChamado ? `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-black tracking-tight border border-blue-200 uppercase">${tituloChamado}</span>` : ''}
+                                </div>
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    ${badgesHTML}
+                                    <div class="flex items-center gap-1.5 bg-slate-200/60 px-2 py-1 rounded-md text-[9px] font-bold text-slate-500 shadow-sm">
+                                        <i data-lucide="clock" class="w-3 h-3 text-slate-400"></i> Salvo em: ${dataLog}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-wrap items-center w-full mt-1 border-t border-slate-200/50 pt-2">
+                                ${previewHTML}
+                            </div>
+                            
+                            <div class="flex gap-2 w-full sm:w-auto opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity self-end mt-1">
+                                <button onclick="imprimirEtiquetaNuvem('${doc.id}')" class="flex items-center justify-center gap-1 bg-slate-200 text-slate-700 hover:bg-slate-300 hover:text-slate-900 px-3 py-1.5 rounded-lg transition-colors shadow-sm text-[9px] font-bold uppercase" title="Imprimir Etiqueta">
+                                    <i data-lucide="printer" class="w-3 h-3"></i> Imprimir
+                                </button>
+                                <button onclick="copiarIDBolsao('${doc.id}')" class="flex-1 sm:flex-none flex items-center justify-center gap-1 bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg transition-colors shadow-sm text-[9px] font-bold uppercase" title="Copiar ID do Kit">
+                                    <i data-lucide="copy" class="w-3 h-3"></i> Copiar ID
+                                </button>
+                                <button onclick="editarBolsaoNuvem('${doc.id}')" class="flex items-center justify-center bg-amber-100 text-amber-600 hover:bg-amber-500 hover:text-white px-3 py-1.5 rounded-lg transition-colors shadow-sm" title="Editar Seriais deste Kit">
+                                    <i data-lucide="pencil" class="w-3 h-3"></i>
+                                </button>
+                                <button onclick="excluirBolsaoNuvem('${doc.id}')" class="flex items-center justify-center bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg transition-colors shadow-sm" title="Excluir Permanentemente">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                lucide.createIcons();
+            }).catch((error) => {
+                lista.innerHTML = `<div class="text-center text-red-500 py-10 font-bold text-xs">Erro de conexão: ${error.message}</div>`;
+            });
+        }
+
+        // ==========================================
+        // SISTEMA DE IMPRESSÃO
+        // ==========================================
+        function imprimirEtiquetaNuvem(id) {
+            const janelaImpressao = window.open('', '_blank', 'width=400,height=600');
+            if(!janelaImpressao) { alert("⚠️ O Chrome bloqueou a impressão. Permita pop-ups na barra de endereços."); return; }
+            janelaImpressao.document.write('<h3 style="font-family:sans-serif; text-align:center; margin-top:20px;">Carregando dados...</h3>');
+
+            db.collection("estoque_bolsoes").doc(id).get().then((docSnapshot) => {
+                if (docSnapshot.exists) {
+                    const dados = docSnapshot.data();
+                    const branch = dados['_branch_modal'] || dados['Branch via argos'] || dados['Branch Via Argo'] || '';
+                    const tipoServico = dados['_servico_modal'] || dados['Tipo de serviço'] || '';
+                    _renderizarEtiqueta(janelaImpressao, id, tipoServico, branch);
+                } else {
+                    janelaImpressao.close(); alert("Kit não encontrado na Nuvem!");
+                }
+            }).catch(err => { janelaImpressao.close(); alert("Erro: " + err.message); });
+        }
+
+        function imprimirEtiquetaLocal(id) {
+            const item = store.bolsoes.find(x => x._id === id);
+            if(item) {
+                const janelaImpressao = window.open('', '_blank', 'width=400,height=600');
+                if(!janelaImpressao) { alert("⚠️ O Chrome bloqueou a impressão. Permita pop-ups!"); return; }
+                
+                let titulo = item[item._titleField] || "KIT";
+                let foundBranch = ''; let foundServico = '';
+                for (let k in item) {
+                    let kLow = k.toLowerCase();
+                    if (kLow.includes('branch') || kLow.includes('argos') || kLow.includes('cliente')) foundBranch = item[k];
+                    if (kLow.includes('tipo de serviço') || kLow.includes('serviço') || kLow.includes('servico')) foundServico = item[k];
+                }
+                _renderizarEtiqueta(janelaImpressao, titulo, foundServico, foundBranch);
+            }
+        }
+
+        function _renderizarEtiqueta(janela, titulo, servico, branch) {
+            const qrConteudo = encodeURIComponent(`Kit: ${titulo}\nServiço: ${servico}\nCliente: ${branch}`);
+
+            janela.document.open();
+            janela.document.write(`
+                <html>
+                <head>
+                    <title>Etiqueta Kit ${titulo}</title>
+                    <style>
+                        @page { margin: 0 !important; size: 29mm 42mm; }
+                        body {
+                            margin: 0 !important; padding: 0 !important;
+                            width: 29mm; height: 42mm;
+                            background: white; overflow: hidden; position: relative;
+                            font-family: 'Arial', sans-serif;
+                        }
+                        .label-wrapper {
+                            position: absolute; top: 1mm; left: 28mm; 
+                            width: 40mm; height: 27mm;
+                            transform-origin: top left; transform: rotate(90deg); 
+                            display: flex; flex-direction: row; align-items: center;
+                            justify-content: flex-start; box-sizing: border-box;
+                        }
+                        .qr-col {
+                            width: 13mm; height: 13mm; display: flex;
+                            justify-content: center; align-items: center;
+                            margin-right: 1.5mm; flex-shrink: 0;
+                        }
+                        .qr-code { width: 100%; height: 100%; }
+                        .text-col {
+                            flex: 1; display: flex; flex-direction: column;
+                            justify-content: center; text-align: left; overflow: hidden;
+                        }
+                        .title { 
+                            font-size: 8.5pt; font-weight: 900; margin-bottom: 1mm; 
+                            text-transform: uppercase; line-height: 1.1; color: #000;
+                            letter-spacing: -0.2px; word-wrap: break-word;
+                        }
+                        .service { 
+                            font-size: 6.5pt; font-weight: bold; margin-bottom: 1.5mm; 
+                            border-bottom: 1px dashed #000; padding-bottom: 1mm; 
+                            line-height: 1.1; color: #000; word-wrap: break-word;
+                        }
+                        .branch { 
+                            font-size: 7.5pt; font-weight: 800; line-height: 1.1;
+                            color: #000; word-wrap: break-word;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="label-wrapper">
+                        <div class="qr-col">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrConteudo}" class="qr-code" onload="window.print(); window.close();" onerror="window.print(); window.close();">
+                        </div>
+                        <div class="text-col">
+                            <div class="title">${titulo}</div>
+                            <div class="service">${servico}</div>
+                            <div class="branch">${branch}</div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
+            janela.document.close();
+            janela.focus();
+        }
+
+        // ==========================================
+        // RESTANTE DO CÓDIGO INTACTO
+        // ==========================================
+        function editarBolsaoNuvem(id) {
+            showLoading("Carregando para edição...");
+            db.collection("estoque_bolsoes").doc(id).get().then((doc) => {
+                if (doc.exists) {
+                    const dados = doc.data();
+                    renderModalEdicao(id, dados);
+                }
+                hideLoading();
+            }).catch(err => {
+                hideLoading();
+                alert("Erro ao abrir edição: " + err.message);
+            });
+        }
+
+        function renderModalEdicao(id, dados) {
+            const lista = document.getElementById('cloud-modal-list');
+            let inputsHTML = '';
+            camposSeriais.forEach(c => {
+                let val = dados[c] || '';
+                inputsHTML += `
+                    <div class="mb-3">
+                        <label class="block text-[8px] font-bold text-slate-400 uppercase mb-1">${c}</label>
+                        <input type="text" id="edit-nuvem-${c.replace(/\s/g, '')}" value="${val}" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white transition-all shadow-sm">
+                    </div>
+                `;
+            });
+
+            lista.innerHTML = `
+                <div class="bg-blue-50 p-5 rounded-2xl border border-blue-200 shadow-inner">
+                    <div class="flex justify-between items-center mb-5 pb-3 border-b border-blue-200/60">
+                        <h4 class="font-black text-blue-800 uppercase tracking-tight flex items-center gap-2">
+                            <i data-lucide="pencil" class="w-4 h-4"></i> Editando Kit: ${id}
+                        </h4>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                        ${inputsHTML}
+                    </div>
+                    
+                    <div class="flex justify-end gap-2 mt-2 pt-4 border-t border-blue-200/60">
+                        <button onclick="abrirEstoqueNuvem()" class="px-5 py-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl text-[10px] font-bold uppercase transition-colors shadow-sm">Cancelar</button>
+                        <button onclick="salvarEdicaoNuvem('${id}')" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase transition-colors shadow-md flex items-center gap-1.5"><i data-lucide="save" class="w-3.5 h-3.5"></i> Salvar Edição</button>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function salvarEdicaoNuvem(id) {
+            let novosDados = {};
+            camposSeriais.forEach(c => {
+                let inputEl = document.getElementById(`edit-nuvem-${c.replace(/\s/g, '')}`);
+                if(inputEl) { novosDados[c] = inputEl.value.trim(); }
+            });
+            const dataAtual = new Date();
+            const diaMes = dataAtual.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            const horaMinuto = dataAtual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            novosDados['_dataSalvamento'] = `${diaMes} às ${horaMinuto} (Editado)`;
+
+            showLoading("Salvando edições na Nuvem...");
+            db.collection("estoque_bolsoes").doc(id).update(novosDados).then(() => {
+                hideLoading(); abrirEstoqueNuvem(); 
+            }).catch(err => { hideLoading(); alert("Erro ao salvar edição: " + err.message); });
+        }
+
+        function fecharEstoqueNuvem() { document.getElementById('cloud-modal-overlay').style.display = 'none'; }
+        function copiarIDBolsao(id) { navigator.clipboard.writeText(id).then(() => { alert(`✅ Código '${id}' copiado!`); }); }
+        function excluirBolsaoNuvem(id) {
+            if (confirm(`Atenção: Tem certeza que deseja DELETAR o kit '${id}' da Nuvem?`)) {
+                db.collection("estoque_bolsoes").doc(id).delete().then(() => { abrirEstoqueNuvem(); }).catch((error) => { alert("Erro ao excluir: " + error.message); });
+            }
+        }
         
         function save() { localStorage.setItem(DB_NAME, JSON.stringify(store)); updateStats(); }
+
+        function showLoading(msg) {
+            document.getElementById('loading-text').innerText = msg || "Processando...";
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+        function hideLoading() { document.getElementById('loading-overlay').style.display = 'none'; }
+
+        function sanitizeForFirestore(obj) {
+            if (!obj || typeof obj !== 'object') return obj;
+            const newObj = {};
+            for (let key in obj) { if (obj[key] === undefined) continue; newObj[key] = String(obj[key]); }
+            return newObj; 
+        }
+
+        function salvarBolsao(id) {
+            const item = store.bolsoes.find(x => x._id === id);
+            if (!item) return;
+
+            let nomeBolsao = prompt("Confirme ou digite o CÓDIGO DO KIT físico (Ex: KIT-001):", item[item._titleField] || "");
+            if (!nomeBolsao || nomeBolsao.trim() === "") return;
+            nomeBolsao = nomeBolsao.trim().toUpperCase().replace(/[\/]/g, '-');
+
+            showLoading("Salvando no Firestore...");
+            const dadosSeguros = sanitizeForFirestore(item);
+            
+            let cardOriginal = null;
+            const abasParaBuscar = ['tiago', 'alana', 'william', 'viviane', 'concluidos', 'etiquetas'];
+            
+            for (let aba of abasParaBuscar) {
+                if (store[aba]) {
+                    let encontrado = store[aba].find(x => x._id === id);
+                    if (encontrado) { cardOriginal = encontrado; break; }
+                }
+            }
+
+            let foundBranch = ''; let foundServico = ''; let foundTitulo = item[item._titleField] || '';
+            if (cardOriginal) {
+                foundTitulo = cardOriginal[cardOriginal._titleField] || foundTitulo;
+                for (let k in cardOriginal) {
+                    let kLow = k.toLowerCase();
+                    if (kLow.includes('branch') || kLow.includes('argos') || kLow.includes('cliente')) foundBranch = cardOriginal[k];
+                    if (kLow.includes('tipo de serviço') || kLow.includes('serviço') || kLow.includes('servico')) foundServico = cardOriginal[k];
+                }
+            }
+            
+            dadosSeguros['_branch_modal'] = foundBranch;
+            dadosSeguros['_servico_modal'] = foundServico;
+            dadosSeguros['_titulo_modal'] = foundTitulo;
+            
+            const dataAtual = new Date();
+            const diaMes = dataAtual.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+            const horaMinuto = dataAtual.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            dadosSeguros['_dataSalvamento'] = `${diaMes} às ${horaMinuto}`;
+            
+            db.collection("estoque_bolsoes").doc(nomeBolsao).set(dadosSeguros)
+            .then(() => {
+                const idx = store.bolsoes.findIndex(x => x._id === id);
+                if (idx > -1) store.bolsoes.splice(idx, 1);
+                save(); render(); hideLoading();
+            }).catch((error) => { hideLoading(); alert("Erro ao salvar no banco: " + error.message); });
+        }
+
+        function puxarBolsao(cardId) {
+            let nomeBolsao = prompt("Bipe ou digite o CÓDIGO DO KIT físico:");
+            if (!nomeBolsao || nomeBolsao.trim() === "") return;
+            nomeBolsao = nomeBolsao.trim().toUpperCase().replace(/[\/]/g, '-');
+
+            showLoading("Buscando no Firestore...");
+            const docRef = db.collection("estoque_bolsoes").doc(nomeBolsao);
+            
+            docRef.get().then((doc) => {
+                if (doc.exists) {
+                    const dadosBolsao = doc.data();
+                    const card = store[currentTab].find(x => x._id === cardId);
+                    if (card) {
+                        camposSeriais.forEach(c => { if (dadosBolsao[c]) card[c] = dadosBolsao[c]; });
+                        save(); docRef.delete().then(() => { render(); hideLoading(); });
+                    }
+                } else { hideLoading(); alert("Atenção: Kit '" + nomeBolsao + "' não encontrado."); }
+            }).catch((error) => { hideLoading(); alert("Erro ao buscar no banco: " + error.message); });
+        }
 
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            
             const isCSV = file.name.toLowerCase().endsWith('.csv');
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
                     let workbook;
-                    if (isCSV) {
-                        workbook = XLSX.read(e.target.result, { type: 'string' });
-                    } else {
-                        const data = new Uint8Array(e.target.result);
-                        workbook = XLSX.read(data, { type: 'array' });
-                    }
+                    if (isCSV) { workbook = XLSX.read(e.target.result, { type: 'string' }); } 
+                    else { const data = new Uint8Array(e.target.result); workbook = XLSX.read(data, { type: 'array' }); }
                     processSheet(workbook.Sheets[workbook.SheetNames[0]]);
-                } catch(err) {
-                    alert("Erro ao ler arquivo. Verifique se o formato é válido.");
-                }
+                } catch(err) { alert("Erro ao ler arquivo."); }
             };
-            if (isCSV) {
-                reader.readAsText(file, 'UTF-8');
-            } else {
-                reader.readAsArrayBuffer(file);
-            }
+            if (isCSV) { reader.readAsText(file, 'UTF-8'); } else { reader.readAsArrayBuffer(file); }
             event.target.value = '';
         }
 
@@ -213,31 +735,21 @@
         function formatarSeriais() {
             const textArea = document.getElementById('paste-area');
             const text = textArea.value;
-            
             if (!text.trim()) return;
-
             const seriais = text.split(/[\n\t\s,]+/).filter(s => s.trim() !== '');
             const formatado = seriais.join(',');
             textArea.value = formatado;
-
             navigator.clipboard.writeText(formatado).then(() => {
                 const btn = document.getElementById('btn-formatar');
                 const originalHtml = btn.innerHTML;
-                
                 btn.innerHTML = '<i data-lucide="check" class="w-3 h-3"></i> Copiado!';
                 btn.classList.replace('bg-blue-600', 'bg-emerald-600');
-                btn.classList.replace('hover:bg-blue-700', 'hover:bg-emerald-700');
                 lucide.createIcons();
-                
                 setTimeout(() => {
                     btn.innerHTML = originalHtml;
                     btn.classList.replace('bg-emerald-600', 'bg-blue-600');
-                    btn.classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
                     lucide.createIcons();
                 }, 2000);
-            }).catch(err => {
-                textArea.select();
-                alert("Seriais formatados! Copie o texto da caixa.");
             });
         }
 
@@ -255,64 +767,36 @@
                     if (item[cleanKey]) item[cleanKey] += " + " + val;
                     else item[cleanKey] = val;
                 });
-
                 let titleField = item["Chave da ocorrência"] ? "Chave da ocorrência" : (item["Chamados"] ? "Chamados" : rawHeaders[0]);
                 let link = null;
-                const linkSearch = JSON.stringify(item);
-                
-                const match = linkSearch.match(/(CONFIGURAR|PROCONFIG)-\d+/i);
+                const match = JSON.stringify(item).match(/(CONFIGURAR|PROCONFIG)-\d+/i);
                 if (match) link = JIRA_BASE_URL + match[0].toUpperCase();
-
                 return { ...item, _id: 'ID-'+Math.random().toString(36).substr(2,9), _origin: currentTab, _link: link, _titleField: titleField };
             });
-
             store[currentTab] = [...store[currentTab], ...processed];
             save(); render();
         }
 
         function handleEnter(e, cardId) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                advanceToNextInput(e.target, cardId);
-            }
+            if (e.key === 'Enter') { e.preventDefault(); advanceToNextInput(e.target, cardId); }
         }
 
         function advanceToNextInput(currentEl, cardId) {
             const now = Date.now();
-            if (now - lastJumpTime < 150) return; // Amortecedor
-
+            if (now - lastJumpTime < 150) return; 
             const inputs = Array.from(document.querySelectorAll(`.serial-input-${cardId}`));
             const currentIndex = inputs.indexOf(currentEl);
-            
             for (let i = currentIndex + 1; i < inputs.length; i++) {
-                if (inputs[i].value.trim() === '') {
-                    inputs[i].focus();
-                    lastJumpTime = now;
-                    return;
-                }
+                if (inputs[i].value.trim() === '') { inputs[i].focus(); lastJumpTime = now; return; }
             }
-            
-            if (currentIndex > -1 && currentIndex < inputs.length - 1) {
-                inputs[currentIndex + 1].focus();
-                lastJumpTime = now;
-            }
+            if (currentIndex > -1 && currentIndex < inputs.length - 1) { inputs[currentIndex + 1].focus(); lastJumpTime = now; }
         }
 
         function validateAndAdvance(el, campo, cardId) {
             const val = String(el.value || '');
             const digitsOnly = val.replace(/\D/g, '');
-            
-            el.classList.remove(
-                'bg-slate-50', 'border-slate-200', 'focus:ring-blue-500',
-                'bg-red-50', 'border-red-500', 'text-red-600', 'focus:ring-red-500',
-                'bg-emerald-50', 'border-emerald-500', 'text-emerald-700', 'focus:ring-emerald-500'
-            );
-
-            if (val.trim() === '') { 
-                el.classList.add('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500'); 
-                el.dataset.valid = "false";
-                return; 
-            }
+            el.classList.remove('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500', 'bg-red-50', 'border-red-500', 'text-red-600', 'focus:ring-red-500', 'bg-emerald-50', 'border-emerald-500', 'text-emerald-700', 'focus:ring-emerald-500');
+            if (val.trim() === '') { el.classList.add('bg-slate-50', 'border-slate-200', 'focus:ring-blue-500'); el.dataset.valid = "false"; return; }
 
             let isValid = false;
             if (campo === 'Iccid' || campo === 'Iccid Camera') isValid = digitsOnly.length === 20;
@@ -329,29 +813,21 @@
                 el.dataset.valid = "false";
             } else {
                 el.classList.add('bg-emerald-50', 'border-emerald-500', 'text-emerald-700', 'focus:ring-emerald-500');
-                if (el.dataset.valid !== "true") {
-                    el.dataset.valid = "true";
-                    advanceToNextInput(el, cardId); 
-                }
+                if (el.dataset.valid !== "true") { el.dataset.valid = "true"; advanceToNextInput(el, cardId); }
             }
         }
 
         function deleteCard(id) {
-            if (confirm("Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.")) {
+            if (confirm("Tem certeza que deseja excluir este registro?")) {
                 const idx = store[currentTab].findIndex(x => x._id === id);
-                if (idx > -1) {
-                    store[currentTab].splice(idx, 1);
-                    save();
-                    render();
-                }
+                if (idx > -1) { store[currentTab].splice(idx, 1); save(); render(); }
             }
         }
 
         function concluir(id) {
             const idx = store[currentTab].findIndex(x=>x._id===id);
             const i = store[currentTab].splice(idx, 1)[0];
-            store.concluidos.unshift(i);
-            save(); render();
+            store.concluidos.unshift(i); save(); render();
         }
 
         function render() {
@@ -377,36 +853,20 @@
                         let isValid = true;
                         let needsValidation = false;
 
-                        if (c === 'Iccid' || c === 'Iccid Camera') {
-                            isValid = digitsOnly.length === 20; 
+                        if (c === 'Iccid' || c === 'Iccid Camera') { isValid = digitsOnly.length === 20; needsValidation = true; } 
+                        else if (c === 'Serial TX009' || c === 'Serial Leitor' || c === 'Serial Teclado') { isValid = digitsOnly.length === 6; needsValidation = true; } 
+                        else if (c === 'Serial Smart Speaker') { isValid = digitsOnly.length === 4; needsValidation = true; } 
+                        else if (c === 'Serial Câmera') { isValid = digitsOnly.length === 15; needsValidation = true; } 
+                        else if (c === 'Serial Rastreador') {
                             needsValidation = true;
-                        } else if (c === 'Serial TX009' || c === 'Serial Leitor' || c === 'Serial Teclado') {
-                            isValid = digitsOnly.length === 6;
-                            needsValidation = true;
-                        } else if (c === 'Serial Smart Speaker') {
-                            isValid = digitsOnly.length === 4;
-                            needsValidation = true;
-                        } else if (c === 'Serial Câmera') {
-                            isValid = digitsOnly.length === 15;
-                            needsValidation = true;
-                        } else if (c === 'Serial Rastreador') {
-                            needsValidation = true;
-                            if (digitsOnly.startsWith('4675') || digitsOnly.startsWith('4634')) {
-                                isValid = digitsOnly.length === 10;
-                            } else if (digitsOnly.startsWith('86') || digitsOnly.startsWith('35')) {
-                                isValid = digitsOnly.length === 15;
-                            } else {
-                                isValid = false;
-                            }
+                            if (digitsOnly.startsWith('4675') || digitsOnly.startsWith('4634')) { isValid = digitsOnly.length === 10; } 
+                            else if (digitsOnly.startsWith('86') || digitsOnly.startsWith('35')) { isValid = digitsOnly.length === 15; } 
+                            else { isValid = false; }
                         }
 
                         if (needsValidation) {
-                            if (!isValid) {
-                                colorClasses = "bg-red-50 border-red-500 text-red-600 focus:ring-red-500";
-                            } else {
-                                colorClasses = "bg-emerald-50 border-emerald-500 text-emerald-700 focus:ring-emerald-500";
-                                isValidData = "true";
-                            }
+                            if (!isValid) { colorClasses = "bg-red-50 border-red-500 text-red-600 focus:ring-red-500"; } 
+                            else { colorClasses = "bg-emerald-50 border-emerald-500 text-emerald-700 focus:ring-emerald-500"; isValidData = "true"; }
                         }
                     }
 
@@ -430,14 +890,20 @@
                     <div class="px-4 py-3 bg-slate-50 border-b flex justify-between items-center">
                         <div class="flex items-center gap-2">
                             <span class="text-[11px] font-black text-slate-800">${title}</span>
-                            ${item._link ? `<button onclick="abrirJiraComDados('${item._id}')" class="bg-blue-600 hover:bg-blue-700 text-[9px] text-white px-3 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors">Autopreencher Jira <i data-lucide="external-link" class="w-3 h-3"></i></button>` : ''}
+                            ${item._link && currentTab !== 'bolsoes' ? `<button onclick="abrirJiraComDados('${item._id}')" class="bg-blue-600 hover:bg-blue-700 text-[9px] text-white px-3 py-1 rounded-lg font-bold flex items-center gap-1 transition-colors">Autopreencher Jira <i data-lucide="external-link" class="w-3 h-3"></i></button>` : ''}
                         </div>
                         <div class="flex gap-2">
+                            ${currentTab === 'bolsoes' ? `<button onclick="imprimirEtiquetaLocal('${item._id}')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors flex items-center gap-1" title="Imprimir Etiqueta"><i data-lucide="printer" class="w-3 h-3"></i></button>` : ''}
+                            
                             <button onclick="deleteCard('${item._id}')" class="bg-red-50 hover:bg-red-500 text-red-500 hover:text-white px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors flex items-center gap-1" title="Excluir este card"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                            
+                            ${!isConcluido && currentTab !== 'etiquetas' && currentTab !== 'bolsoes' ? `<button onclick="puxarBolsao('${item._id}')" class="bg-violet-100 hover:bg-violet-600 text-violet-600 hover:text-white border border-violet-200 px-3 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors flex items-center gap-1" title="Puxar Seriais guardados na Nuvem"><i data-lucide="cloud-download" class="w-3 h-3"></i> Puxar Kit</button>` : ''}
+                            
+                            ${currentTab === 'bolsoes' ? `<button onclick="salvarBolsao('${item._id}')" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors flex items-center gap-1"><i data-lucide="cloud-upload" class="w-3 h-3"></i> Guardar no Estoque</button>` : ''}
                             
                             ${isConcluido ? `<button onclick="enviarIndividual('${item._id}')" class="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1 rounded-lg text-[9px] font-bold uppercase flex items-center gap-1 transition-colors">Enviar Planilha <i data-lucide="send" class="w-3 h-3"></i></button>` : ''}
                             
-                            ${!isConcluido && currentTab !== 'etiquetas' ? `<button onclick="concluir('${item._id}')" class="bg-slate-900 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors">Concluir</button>` : ''}
+                            ${!isConcluido && currentTab !== 'etiquetas' && currentTab !== 'bolsoes' ? `<button onclick="concluir('${item._id}')" class="bg-slate-900 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-[9px] font-bold uppercase transition-colors">Concluir</button>` : ''}
                         </div>
                     </div>
                     <div class="p-4">
@@ -448,38 +914,23 @@
                 container.appendChild(card);
             });
             lucide.createIcons();
-            
             filterCards(); 
         }
 
         function abrirJiraComDados(id) {
             const item = store[currentTab].find(x => x._id === id);
             if (!item || !item._link) return;
-
-            const dadosParaEnviar = {
-                serial: item["Serial Rastreador"] || "",
-                iccid: item["Iccid"] || "",
-                tx009: item["Serial TX009"] || "",
-                leitor: item["Serial Leitor"] || "",
-                teclado: item["Serial Teclado"] || "",
-                smartspeaker: item["Serial Smart Speaker"] || "",
-                camera: item["Serial Câmera"] || ""
-            };
-            
+            const dadosParaEnviar = { serial: item["Serial Rastreador"] || "", iccid: item["Iccid"] || "", tx009: item["Serial TX009"] || "", leitor: item["Serial Leitor"] || "", teclado: item["Serial Teclado"] || "", smartspeaker: item["Serial Smart Speaker"] || "", camera: item["Serial Câmera"] || "" };
             const urlJira = new URL(item._link);
             urlJira.searchParams.append("autofill", "true");
-            Object.entries(dadosParaEnviar).forEach(([chave, valor]) => {
-                if (valor && valor.toString().trim() !== "") {
-                    urlJira.searchParams.append(chave, valor);
-                }
-            });
+            Object.entries(dadosParaEnviar).forEach(([chave, valor]) => { if (valor && valor.toString().trim() !== "") { urlJira.searchParams.append(chave, valor); } });
             window.open(urlJira.toString(), '_blank');
         }
 
         function acaoSalvarTodos() {
             if (store.concluidos.length === 0) return;
             isBatchSubmit = true;
-            document.getElementById('loading-overlay').style.display = 'flex';
+            showLoading("Enviando para Planilha Google...");
             submissionQueue = [...store.concluidos];
             processNextInQueue();
         }
@@ -488,14 +939,14 @@
             const item = store.concluidos.find(i => i._id === id);
             if (!item) return;
             isBatchSubmit = false;
-            document.getElementById('loading-overlay').style.display = 'flex';
+            showLoading("Enviando para Planilha Google...");
             submissionQueue = [item];
             processNextInQueue();
         }
 
         function processNextInQueue() {
             if (submissionQueue.length === 0) {
-                document.getElementById('loading-overlay').style.display = 'none';
+                hideLoading();
                 if (isBatchSubmit) alert("Sincronização de todos os cards concluída!");
                 return;
             }
@@ -503,9 +954,7 @@
             currentProcessingId = item._id;
             
             const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = WEB_APP_URL;
-            form.target = 'hidden_iframe';
+            form.method = 'POST'; form.action = WEB_APP_URL; form.target = 'hidden_iframe';
             Object.entries(item).forEach(([k, v]) => {
                 if (!k.startsWith('_') || k === '_origin') {
                     const inp = document.createElement('input');
@@ -513,9 +962,7 @@
                     form.appendChild(inp);
                 }
             });
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
+            document.body.appendChild(form); form.submit(); document.body.removeChild(form);
         }
 
         window.finalizeSubmit = function() {
@@ -550,66 +997,42 @@
             
             XLSX.writeFile(wb, "Etiquetas_PCP.xlsx");
             setTimeout(() => {
-                if(confirm("Planilha baixada! Deseja limpar os registros da aba de Etiquetas?")) {
-                    store.etiquetas = [];
-                    save();
-                    render();
-                }
+                if(confirm("Planilha baixada! Deseja limpar os registros da aba de Etiquetas?")) { store.etiquetas = []; save(); render(); }
             }, 500);
         }
 
-        function updateVal(id,f,v) { 
-            const i = store[currentTab].find(x=>x._id===id);
-            if(i){i[f]=v;save();}
-        }
-        
-        function clearCurrentTab() { 
-            if(confirm("Limpar dados desta aba?")) { 
-                store[currentTab]=[];
-                save(); render(); 
-            } 
-        }
+        function updateVal(id,f,v) { const i = store[currentTab].find(x=>x._id===id); if(i){i[f]=v;save();} }
+        function clearCurrentTab() { if(confirm("Limpar dados desta aba?")) { store[currentTab]=[]; save(); render(); } }
         
         function switchTab(id) { 
             currentTab = id;
             document.querySelectorAll('.tab-button').forEach(b => b.classList.toggle('active', b.id === 'btn-'+id));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === id));
-            document.getElementById('current-name').innerText = id.charAt(0).toUpperCase() + id.slice(1);
+            document.getElementById('current-name').innerText = id === 'bolsoes' ? 'KITS' : id.charAt(0).toUpperCase() + id.slice(1);
             document.getElementById('concluidos-tools').classList.toggle('hidden', id !== 'concluidos');
             document.getElementById('etiquetas-tools').classList.toggle('hidden', id !== 'etiquetas');
-            
             document.getElementById('search-input').value = '';
-            
             render();
         }
         
         function updateStats() {
-            document.getElementById('stat-total').innerText = store.tiago.length + store.alana.length + store.william.length + store.viviane.length;
+            document.getElementById('stat-total').innerText = store.tiago.length + store.alana.length + store.william.length + store.viviane.length + store.bolsoes.length;
             document.getElementById('stat-done').innerText = store.concluidos.length;
         }
         
         function filterCards() {
             const q = document.getElementById('search-input').value.toLowerCase();
             let visibleCount = 0;
-            
             document.querySelectorAll('.card-animation').forEach(c => {
                 const isMatch = c.innerText.toLowerCase().includes(q);
                 c.style.display = isMatch ? 'block' : 'none';
-                
                 if (isMatch) visibleCount++; 
             });
             if (q.trim() !== '') {
-                if (['tiago', 'alana', 'william', 'viviane'].includes(currentTab)) {
-                    document.getElementById('stat-total').innerText = visibleCount;
-                } else if (currentTab === 'concluidos') {
-                    document.getElementById('stat-done').innerText = visibleCount;
-                }
-            } else {
-                updateStats();
-            }
+                if (['tiago', 'alana', 'william', 'viviane', 'bolsoes'].includes(currentTab)) { document.getElementById('stat-total').innerText = visibleCount; } 
+                else if (currentTab === 'concluidos') { document.getElementById('stat-done').innerText = visibleCount; }
+            } else { updateStats(); }
         }
-
-        window.onload = () => { render(); updateStats(); };
     </script>
 </body>
 </html>
